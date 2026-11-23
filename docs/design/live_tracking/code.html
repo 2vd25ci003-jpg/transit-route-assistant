@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-container-low": "#131b2e", "primary-container": "#14b8a6", "on-tertiary-fixed-variant": "#653e00", "error": "#ffb4ab", "outline-variant": "#3c4947", "secondary": "#7bd0ff", "surface": "#0b1326", "inverse-on-surface": "#283044", "inverse-surface": "#dae2fd", "surface-container": "#171f33", "on-primary-fixed-variant": "#005048", "on-tertiary-fixed": "#2a1700", "surface-tint": "#4fdbc8", "on-secondary-container": "#00374d", "primary-fixed-dim": "#4fdbc8", "error-container": "#93000a", "surface-container-highest": "#2d3449", "surface-variant": "#2d3449", "on-error": "#690005", "on-primary": "#003731", "on-tertiary": "#472a00", "tertiary-fixed": "#ffddb8", "tertiary-container": "#e49200", "on-tertiary-container": "#543300", "secondary-fixed": "#c4e7ff", "background": "#0b1326", "on-error-container": "#ffdad6", "tertiary-fixed-dim": "#ffb95f", "on-primary-fixed": "#00201c", "on-primary-container": "#00423b", "secondary-fixed-dim": "#7bd0ff", "outline": "#859490", "surface-bright": "#31394d", "primary": "#4fdbc8", "surface-container-lowest": "#060e20", "surface-container-high": "#222a3d", "on-secondary-fixed-variant": "#004c69", "primary-fixed": "#71f8e4", "on-surface": "#dae2fd", "surface-dim": "#0b1326", "inverse-primary": "#006b5f", "on-surface-variant": "#bbcac6", "secondary-container": "#00a6e0", "on-background": "#dae2fd", "tertiary": "#ffb95f", "on-secondary": "#00354a", "on-secondary-fixed": "#001e2c" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1rem", "space-lg": "1rem", "space-xs": "0.25rem", "gutter": "1rem", "space-md": "0.75rem", "margin-desktop": "2rem", "gutter-desktop": "1.5rem", "space-xl": "1.5rem", "space-sm": "0.5rem" }, "fontFamily": { "display-time": ["Inter"], "label-md": ["Inter"], "headline-md": ["Inter"], "headline-sm": ["Inter"], "body-lg": ["Inter"], "route-badge": ["Inter"], "display-time-mobile": ["Inter"], "body-md": ["Inter"], "label-sm": ["Inter"], "headline-lg": ["Inter"] }, "fontSize": { "display-time": ["40px", { "lineHeight": "44px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "route-badge": ["22px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "display-time-mobile": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }], "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500" }], "headline-lg": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "700" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface text-on-surface font-body-md text-body-md flex flex-col min-h-screen selection:bg-primary-container selection:text-on-primary-container"><header class="fixed top-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-xl pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-14 px-margin flex items-center justify-between"><button class="flex items-center gap-space-xs text-on-surface hover:text-primary transition-colors min-h-[44px] min-w-[44px] py-space-xs"><div class="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container-high text-primary"><span class="material-symbols-outlined text-[20px]">directions_bus</span></div><div class="flex flex-col text-left"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Transit City</span><span class="font-headline-sm text-headline-sm text-on-surface leading-none">Transit Search</span></div><span class="material-symbols-outlined text-outline text-[18px]">expand_more</span></button><div class="flex items-center gap-space-sm"><button aria-label="Transit alerts" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-14 pb-20 bg-surface min-h-screen"><div class="flex flex-col w-full relative select-none">
+<!-- Map Simulation Viewport -->
+<div class="relative w-full h-[370px] overflow-hidden bg-surface-container-lowest">
+<!-- Map Canvas (Stylized Night Vector Map Canvas) -->
+<svg class="absolute inset-0 w-full h-full object-cover" fill="none" viewbox="0 0 400 370" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<!-- Route Glow Filter -->
+<filter height="140%" id="glow-teal" width="140%" x="-20%" y="-20%">
+<fegaussianblur result="blur" stddeviation="3.5"></fegaussianblur>
+<femerge>
+<femergenode in="blur"></femergenode>
+<femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+<!-- Linear Gradients -->
+<lineargradient gradientunits="userSpaceOnUse" id="routeGrad" x1="50" x2="330" y1="360" y2="40">
+<stop offset="0%" stop-color="#14b8a6" stop-opacity="0.3"></stop>
+<stop offset="45%" stop-color="#4fdbc8"></stop>
+<stop offset="100%" stop-color="#7bd0ff"></stop>
+</lineargradient>
+<radialgradient cx="50%" cy="50%" id="vehiclePulse" r="50%">
+<stop offset="0%" stop-color="#4fdbc8" stop-opacity="0.6"></stop>
+<stop offset="100%" stop-color="#4fdbc8" stop-opacity="0"></stop>
+</radialgradient>
+</defs>
+<!-- Background Blocks / City Polygons -->
+<rect fill="#0b1326" height="370" width="400"></rect>
+<path d="M-10 60 L120 40 L160 130 L-20 180 Z" fill="#131b2e" opacity="0.65"></path>
+<path d="M190 20 L380 -10 L410 110 L220 140 Z" fill="#171f33" opacity="0.5"></path>
+<path d="M-10 220 L180 180 L210 320 L-20 380 Z" fill="#131b2e" opacity="0.7"></path>
+<path d="M230 170 L420 130 L430 360 L240 370 Z" fill="#171f33" opacity="0.55"></path>
+<!-- Water Feature / River curve -->
+<path d="M290 370 C270 280 340 190 320 80 C310 30 315 -20 315 -20" opacity="0.45" stroke="#00354a" stroke-linecap="round" stroke-width="26"></path>
+<!-- Major Arterials & Secondary Roads -->
+<path d="M-10 110 H410" stroke="#222a3d" stroke-width="5"></path>
+<path d="M-10 240 H410" stroke="#222a3d" stroke-width="4.5"></path>
+<path d="M110 -10 V380" stroke="#222a3d" stroke-width="4"></path>
+<path d="M260 -10 V380" stroke="#222a3d" stroke-width="4.5"></path>
+<path d="M-10 40 L410 340" opacity="0.5" stroke="#222a3d" stroke-dasharray="3 4" stroke-width="2.5"></path>
+<path d="M30 380 L370 -10" opacity="0.6" stroke="#1d2538" stroke-width="3"></path>
+<!-- Active Bus 12 Glowing Polyline Route -->
+<!-- Inactive tail -->
+<path d="M50 350 L85 275 L115 220 L155 170" stroke="#005048" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<!-- Active illuminated track ahead -->
+<path d="M155 170 L195 130 L235 98 L285 58 L320 32" filter="url(#glow-teal)" stroke="url(#routeGrad)" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<!-- Animated Direction Chevrons on Path -->
+<g opacity="0.85" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+<path d="M210 119 L215 115 L219 119"></path>
+<path d="M255 83 L260 79 L264 83"></path>
+</g>
+<!-- Approaching Waypoint Node: Market St & 4th Ave -->
+<circle cx="215" cy="115" fill="#4fdbc8" opacity="0.18" r="14">
+<animate attributename="r" dur="2.4s" repeatcount="indefinite" values="7;18;7"></animate>
+<animate attributename="opacity" dur="2.4s" repeatcount="indefinite" values="0.4;0.05;0.4"></animate>
+</circle>
+<circle cx="215" cy="115" fill="#4fdbc8" r="5" stroke="#0b1326" stroke-width="2"></circle>
+<!-- Subsequent Waypoint: Civic Plaza -->
+<circle cx="270" cy="71" fill="#dae2fd" r="3.5" stroke="#0b1326" stroke-width="1.5"></circle>
+<!-- Terminal Waypoint: Northgate Terminal Pin -->
+<g transform="translate(320, 24)">
+<circle cx="0" cy="0" fill="#7bd0ff" opacity="0.3" r="7"></circle>
+<circle cx="0" cy="0" fill="#7bd0ff" r="3.5" stroke="#0b1326" stroke-width="1.5"></circle>
+</g>
+<!-- LIVE VEHICLE MARKER: Bus 12 -->
+<g transform="translate(155, 170)">
+<!-- Beacon pulse -->
+<circle cx="0" cy="0" fill="url(#vehiclePulse)" r="26">
+<animate attributename="r" dur="1.8s" repeatcount="indefinite" values="14;30;14"></animate>
+<animate attributename="opacity" dur="1.8s" repeatcount="indefinite" values="0.8;0.1;0.8"></animate>
+</circle>
+<!-- Heading Indicator Cone -->
+<path d="M-8 -6 L14 -18 L6 6 Z" fill="#4fdbc8" opacity="0.35"></path>
+<!-- Vehicle Body Circle -->
+<circle cx="0" cy="0" fill="#14b8a6" r="13" stroke="#060e20" stroke-width="2.5"></circle>
+<!-- Bus Icon Inside -->
+<g fill="#003731" transform="translate(-6.5, -6.5) scale(0.65)">
+<path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"></path>
+</g>
+</g>
+</svg>
+<!-- Map Floating Top HUD Elements -->
+<div class="absolute top-3 inset-x-margin flex items-center justify-between pointer-events-none">
+<!-- Back / Exit Route Tracking -->
+<button aria-label="Return to list" class="pointer-events-auto h-11 w-11 rounded-full bg-surface-container/90 backdrop-blur-md flex items-center justify-center text-on-surface shadow-md active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<!-- Live GPS Telemetry Badge -->
+<div class="pointer-events-auto flex items-center gap-space-xs px-3 py-1.5 rounded-full bg-surface-container/90 backdrop-blur-md shadow-md">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold tracking-wide uppercase">Live GPS</span>
+<span class="text-outline text-label-sm">• 3s ago</span>
+</div>
+<!-- Recenter View Button -->
+<button aria-label="Recenter vehicle" class="pointer-events-auto h-11 w-11 rounded-full bg-surface-container/90 backdrop-blur-md flex items-center justify-center text-primary shadow-md active:scale-95 transition-transform" id="recenterBtn">
+<span class="material-symbols-outlined text-[20px]">my_location</span>
+</button>
+</div>
+<!-- Map Floating Tool Stack (Right Side) -->
+<div class="absolute right-margin bottom-4 flex flex-col gap-2 pointer-events-auto">
+<button aria-label="Traffic Layer" class="h-10 w-10 rounded-full bg-surface-container/90 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-on-surface shadow-md active:scale-95">
+<span class="material-symbols-outlined text-[19px]">layers</span>
+</button>
+<button aria-label="Map Zoom" class="h-10 w-10 rounded-full bg-surface-container/90 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:text-on-surface shadow-md active:scale-95">
+<span class="material-symbols-outlined text-[19px]">explore</span>
+</button>
+</div>
+<!-- Dynamic Speed Badge Pill on Map -->
+<div class="absolute left-margin bottom-4 pointer-events-none">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container/85 backdrop-blur-sm shadow-sm">
+<span class="material-symbols-outlined text-primary text-[15px]">speed</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">18 mph</span>
+<span class="text-outline text-label-sm">• Downtown Exp</span>
+</div>
+</div>
+</div>
+<!-- FLOATING REAL-TIME TRACKING HUD / BOTTOM SHEET CONTAINER -->
+<div class="relative w-full -mt-2 bg-surface-container-low rounded-t-3xl shadow-xl flex flex-col px-margin pt-3 pb-6 z-10">
+<!-- Sheet Drag Pill -->
+<div class="w-10 h-1 rounded-full bg-surface-variant mx-auto mb-3"></div>
+<!-- Primary Status & Arrival Header -->
+<div class="flex items-start justify-between gap-space-sm mb-3">
+<div class="flex items-start gap-space-sm min-w-0">
+<!-- Prominent Line Badge -->
+<div class="flex items-center justify-center px-3.5 py-2 rounded-xl bg-primary-container text-on-primary font-route-badge text-route-badge shadow-sm">
+          12
+        </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-baseline gap-space-xs">
+<h1 class="font-headline-md text-headline-md text-on-surface truncate">Arriving in 4 min</h1>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">To Northgate Center via Metro Hub</p>
+</div>
+</div>
+<!-- Live Countdown Mini Dial/Pill -->
+<div class="flex flex-col items-end shrink-0">
+<div class="px-2.5 py-1 rounded-lg bg-surface-container-high text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+<span class="font-label-md text-label-md">On Route</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline mt-1">Bus #4028</span>
+</div>
+</div>
+<!-- Status Badges Row: Delay Alert & Telemetry & Crowd -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 mb-4">
+<!-- Amber Delay Badge -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-container text-on-tertiary-container shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span class="font-label-sm text-label-sm font-semibold">+3 min Delay (4th Ave traffic)</span>
+</div>
+<!-- Crowd Occupancy Meter -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
+<div class="flex items-end gap-0.5 h-3">
+<div class="w-1 h-1.5 rounded-full bg-primary"></div>
+<div class="w-1 h-2.5 rounded-full bg-tertiary"></div>
+<div class="w-1 h-3 rounded-full bg-surface-variant"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">Crowd:</span>
+<span class="font-label-sm text-label-sm text-tertiary font-semibold">Medium</span>
+</div>
+<!-- Air Con / EV Badge -->
+<div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
+<span class="material-symbols-outlined text-[14px] text-secondary">mode_fan</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Cool • 71°</span>
+</div>
+</div>
+<!-- NEXT 3 STOPS TIMELINE COMPONENT -->
+<div class="w-full bg-surface-container rounded-2xl p-space-md shadow-sm mb-4">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Live Route Progress</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">3 Stops Ahead</span>
+</div>
+<div class="relative flex flex-col space-y-4">
+<!-- Connecting Vertical Rail -->
+<div class="absolute left-[13px] top-3 bottom-3 w-[2px] bg-surface-variant">
+<!-- Active teal progress fill line for next stop -->
+<div class="w-full h-8 bg-primary"></div>
+</div>
+<!-- Stop 1: Imminent Stop -->
+<div class="relative flex items-start gap-space-md">
+<!-- Node Marker with Beacon Pulse -->
+<div class="relative z-10 flex items-center justify-center w-7 h-7 shrink-0">
+<span class="absolute inline-flex h-full w-full rounded-full bg-primary opacity-30 animate-ping"></span>
+<div class="w-4 h-4 rounded-full bg-primary flex items-center justify-center shadow-sm">
+<div class="w-1.5 h-1.5 rounded-full bg-on-primary"></div>
+</div>
+</div>
+<!-- Stop Details -->
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-1">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Market St &amp; 4th Ave</span>
+<span class="font-headline-sm text-headline-sm text-primary font-bold shrink-0">4 min</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-on-primary-container font-label-sm text-label-sm font-semibold">Approaching</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Platform B • 150m away</span>
+</div>
+</div>
+</div>
+<!-- Stop 2: Civic Plaza -->
+<div class="relative flex items-start gap-space-md">
+<div class="relative z-10 flex items-center justify-center w-7 h-7 shrink-0">
+<div class="w-3.5 h-3.5 rounded-full bg-surface-container-high border-2 border-outline-variant flex items-center justify-center">
+<div class="w-1 h-1 rounded-full bg-on-surface-variant"></div>
+</div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-1">
+<span class="font-body-lg text-body-lg text-on-surface truncate">Civic Plaza &amp; 8th</span>
+<span class="font-body-md text-body-md text-on-surface-variant shrink-0">11 min</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-label-sm text-outline">Est. 8:36 AM</span>
+<span class="font-label-sm text-label-sm text-outline">•</span>
+<!-- Transfers badge -->
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container-highest text-secondary font-label-sm text-label-sm font-medium">
+<span class="material-symbols-outlined text-[12px]">directions_subway</span>
+                Blue Rail • 48X
+              </span>
+</div>
+</div>
+</div>
+<!-- Stop 3: Northgate Terminal -->
+<div class="relative flex items-start gap-space-md">
+<div class="relative z-10 flex items-center justify-center w-7 h-7 shrink-0">
+<div class="w-3.5 h-3.5 rounded-full bg-surface-container-high border-2 border-secondary flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+</div>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-1">
+<span class="font-body-lg text-body-lg text-on-surface truncate">Northgate Transit Terminal</span>
+<span class="font-body-md text-body-md text-on-surface-variant shrink-0">19 min</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-label-sm text-outline">Est. 8:44 AM</span>
+<span class="font-label-sm text-label-sm text-outline">•</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Bay 4 • Final Destination</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ACTION CONTROLS & RIDER UTILITIES -->
+<div class="grid grid-cols-3 gap-space-sm mb-2">
+<!-- Stop Request / Notify Action -->
+<button class="flex flex-col items-center justify-center p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface active:scale-95 transition-all text-center" id="notifyBtn">
+<span class="material-symbols-outlined text-primary text-[22px] mb-1" id="notifyIcon">notifications_active</span>
+<span class="font-label-sm text-label-sm font-semibold">Notify Stop</span>
+<span class="font-label-sm text-label-sm text-outline">At Market St</span>
+</button>
+<!-- Share Trip ETA -->
+<button class="flex flex-col items-center justify-center p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface active:scale-95 transition-all text-center" id="shareBtn">
+<span class="material-symbols-outlined text-secondary text-[22px] mb-1">share_location</span>
+<span class="font-label-sm text-label-sm font-semibold">Share Live</span>
+<span class="font-label-sm text-label-sm text-outline">Live Tracking</span>
+</button>
+<!-- Report Issue / Crowd -->
+<button class="flex flex-col items-center justify-center p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface active:scale-95 transition-all text-center">
+<span class="material-symbols-outlined text-tertiary text-[22px] mb-1">report_problem</span>
+<span class="font-label-sm text-label-sm font-semibold">Report</span>
+<span class="font-label-sm text-label-sm text-outline">Crowd/Delay</span>
+</button>
+</div>
+<!-- Primary Prominent Commute Action -->
+<button class="w-full h-12 rounded-xl bg-primary-container text-on-primary font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-space-xs shadow-md active:scale-98 transition-transform mt-1">
+<span class="material-symbols-outlined text-[20px]">transit_ticket</span>
+<span>Quick Pay &amp; Board ($2.50)</span>
+</button>
+</div>
+</div>
+<script>
+  // Highlight Live Tab in the bottom shell navigation
+  (function initTrackingView() {
+    const navLinks = document.querySelectorAll('nav a');
+    navLinks.forEach(link => {
+      if (link.getAttribute('data-path') === 'live-radar') {
+        link.classList.remove('text-on-surface-variant');
+        link.classList.add('text-primary');
+        const icon = link.querySelector('.material-symbols-outlined');
+        if (icon) {
+          icon.style.fontVariationSettings = "'FILL' 1";
+        }
+      } else {
+        link.classList.remove('text-primary');
+        link.classList.add('text-on-surface-variant');
+      }
+    });
+
+    // Notify toggle micro-interaction
+    const notifyBtn = document.getElementById('notifyBtn');
+    const notifyIcon = document.getElementById('notifyIcon');
+    let active = true;
+    if (notifyBtn && notifyIcon) {
+      notifyBtn.addEventListener('click', () => {
+        active = !active;
+        if (active) {
+          notifyIcon.textContent = 'notifications_active';
+          notifyIcon.classList.add('text-primary');
+          notifyIcon.classList.remove('text-outline');
+        } else {
+          notifyIcon.textContent = 'notifications_off';
+          notifyIcon.classList.remove('text-primary');
+          notifyIcon.classList.add('text-outline');
+        }
+      });
+    }
+
+    // Recenter micro-interaction
+    const recenterBtn = document.getElementById('recenterBtn');
+    if (recenterBtn) {
+      recenterBtn.addEventListener('click', () => {
+        recenterBtn.classList.add('rotate-45');
+        setTimeout(() => recenterBtn.classList.remove('rotate-45'), 300);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-4px_16px_rgba(0,0,0,0.35)]" data-active-classes="text-primary"><div class="flex justify-around items-center h-16 px-gutter"><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-space-sm text-on-surface-variant hover:text-on-surface transition-colors group" data-path="transit-search" href="#"><span class="material-symbols-outlined text-[24px] group-hover:scale-105 transition-transform">search</span><span class="font-label-sm text-label-sm mt-0.5">Search</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-space-sm text-on-surface-variant hover:text-on-surface transition-colors group" data-path="live-radar" href="#"><span class="material-symbols-outlined text-[24px] group-hover:scale-105 transition-transform">radar</span><span class="font-label-sm text-label-sm mt-0.5">Live</span></a><a class="flex flex-col items-center justify-center min-w-[56px] min-h-[48px] px-space-sm text-on-surface-variant hover:text-on-surface transition-colors group" data-path="saved-routes" href="#"><span class="material-symbols-outlined text-[24px] group-hover:scale-105 transition-transform">bookmark</span><span class="font-label-sm text-label-sm mt-0.5">Saved</span></a></div></nav></body></html>
