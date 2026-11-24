@@ -94,10 +94,14 @@ def stop_eta(
     ),
     db: Session = Depends(get_db),
 ) -> list[EtaOut]:
-    """Estimated arrival times for the next buses at a stop.
+    """Next arriving buses at a stop, sorted by ETA (up to 5).
 
-    Only trips with a vehicle position within 5 minutes before *as_of* are
-    considered active.
+    A trip is *active* if it has at least one vehicle position within
+    5 minutes before *as_of*.  The vehicle's progress along the route is
+    determined by counting how many position pings it has emitted up to
+    *as_of* (each ping corresponds to one stop visited, in order).  The
+    average inter-stop time is computed from the trip's own timestamps;
+    for trips with only one ping so far, a 4-minute default is used.
     """
     stop = db.get(Stop, stop_id)
     if stop is None:
@@ -122,64 +126,58 @@ def stop_eta(
         target_seq = trs.seq
         route = db.get(Route, trs.route_id)
 
-        # Coordinates of every stop on this route (for nearest-stop matching)
-        route_stop_coords: list[tuple[int, float, float]] = (
-            db.query(RouteStop.seq, Stop.lat, Stop.lng)
-            .join(Stop, RouteStop.stop_id == Stop.id)
-            .filter(RouteStop.route_id == trs.route_id)
-            .order_by(RouteStop.seq)
-            .all()
-        )
-
-        # Latest position per active trip on this route
-        latest_sub = (
-            db.query(
-                VehiclePosition.trip_id,
-                func.max(VehiclePosition.ts).label("max_ts"),
-            )
+        # Active trip IDs on this route (≥1 VP in the window)
+        active_trip_rows = (
+            db.query(VehiclePosition.trip_id)
             .join(Trip, VehiclePosition.trip_id == Trip.id)
             .filter(
                 Trip.route_id == trs.route_id,
                 VehiclePosition.ts >= window_start,
                 VehiclePosition.ts <= effective,
             )
-            .group_by(VehiclePosition.trip_id)
-            .subquery()
-        )
-
-        positions = (
-            db.query(VehiclePosition)
-            .join(
-                latest_sub,
-                and_(
-                    VehiclePosition.trip_id == latest_sub.c.trip_id,
-                    VehiclePosition.ts == latest_sub.c.max_ts,
-                ),
-            )
+            .distinct()
             .all()
         )
 
-        for vp in positions:
-            # Find which route-stop seq the vehicle is closest to
-            best_seq = route_stop_coords[0][0]
-            best_dist = float("inf")
-            for seq, slat, slng in route_stop_coords:
-                d = (vp.lat - slat) ** 2 + (vp.lng - slng) ** 2
-                if d < best_dist:
-                    best_dist = d
-                    best_seq = seq
-
-            # Include buses that haven't yet passed the target stop
-            if best_seq <= target_seq:
-                stops_away = target_seq - best_seq
-                results.append(
-                    EtaOut(
-                        route_id=route.id,
-                        route_name=route.name,
-                        trip_id=vp.trip_id,
-                        eta_minutes=round(stops_away * _INTER_STOP_MINUTES, 1),
-                    )
+        for (trip_id,) in active_trip_rows:
+            # Every VP for this trip up to as_of, ordered by time.
+            # Each VP corresponds to one stop visited (in route order).
+            trip_vps = (
+                db.query(VehiclePosition.ts)
+                .filter(
+                    VehiclePosition.trip_id == trip_id,
+                    VehiclePosition.ts <= effective,
                 )
+                .order_by(VehiclePosition.ts)
+                .all()
+            )
+            vp_count = len(trip_vps)
+            if vp_count == 0:
+                continue
+
+            # Number of VPs emitted = number of stops visited so far
+            current_seq = vp_count
+            stops_remaining = target_seq - current_seq
+            if stops_remaining <= 0:
+                continue  # bus already at or past this stop
+
+            # Average inter-stop time from this trip's own data
+            if vp_count >= 2:
+                first_ts: datetime = trip_vps[0][0]
+                last_ts: datetime = trip_vps[-1][0]
+                total_minutes = (last_ts - first_ts).total_seconds() / 60
+                avg_minutes = total_minutes / (vp_count - 1)
+            else:
+                avg_minutes = _INTER_STOP_MINUTES  # fallback
+
+            results.append(
+                EtaOut(
+                    route_id=route.id,
+                    route_name=route.name,
+                    trip_id=trip_id,
+                    eta_minutes=round(stops_remaining * avg_minutes, 1),
+                )
+            )
 
     results.sort(key=lambda e: e.eta_minutes)
-    return results
+    return results[:5]

@@ -57,8 +57,9 @@ class TestNearbyStops:
 class TestStopEta:
     def test_eta_for_approaching_bus(self, client):
         # Stop C (id=3): on Alpha seq 3, on Beta seq 2
-        # Trip 1 is near B (seq 2 on Alpha) → 1 stop → 4.0 min
-        # Trip 2 is near C (seq 2 on Beta) → 0 stops → 0.0 min
+        # Trip 1 has 2 VPs (at stops A, B) → at seq 2, 1 stop away → 4.0 min
+        # Trip 4 has 1 VP  (at stop A)     → at seq 1, 2 stops away → 8.0 min
+        # Trip 2 has 2 VPs (at stops B, C) → at seq 2 on Beta = target → skipped
         resp = client.get("/stops/3/eta")
         assert resp.status_code == 200
         data = resp.json()
@@ -102,6 +103,18 @@ class TestStopEta:
         trip_ids = {e["trip_id"] for e in data}
         assert trip_ids == {3}
         assert data[0]["eta_minutes"] == 8.0
+
+    def test_eta_bus_two_stops_away(self, client):
+        """Trip 4 at Stop A (seq 1), target Stop C (seq 3) → 2 stops, eta > 0."""
+        resp = client.get(
+            "/stops/3/eta", params={"as_of": "2026-11-23T08:04:00"}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        t4_results = [e for e in data if e["trip_id"] == 4]
+        assert len(t4_results) == 1
+        assert t4_results[0]["eta_minutes"] > 0
+        assert t4_results[0]["route_name"] == "Route Alpha"
 
     def test_eta_stop_not_found(self, client):
         resp = client.get("/stops/999/eta")

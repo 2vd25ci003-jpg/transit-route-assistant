@@ -37,7 +37,7 @@ def test_engine():
 
 # ---- Seed data -----------------------------------------------------------
 #
-# 4 stops, 2 routes, 3 trips (2 active + 1 old), 5 vehicle positions.
+# 4 stops, 2 routes, 4 trips (3 active + 1 old), 6 vehicle positions.
 #
 #   Route Alpha : Stop A (seq 1) → Stop B (seq 2) → Stop C (seq 3)
 #   Route Beta  : Stop B (seq 1) → Stop C (seq 2) → Stop D (seq 3)
@@ -45,6 +45,7 @@ def test_engine():
 #   Trip 1 (Route Alpha, 08:00) – positions at 08:00 and 08:04 (active)
 #   Trip 2 (Route Beta,  08:00) – positions at 08:00 and 08:04 (active)
 #   Trip 3 (Route Alpha, 07:00) – position  at 07:00 only     (old)
+#   Trip 4 (Route Alpha, 08:02) – position  at 08:02 only     (active, 2 stops from C)
 #
 
 
@@ -115,6 +116,16 @@ def _seed(test_engine):
     db.add(VehiclePosition(
         trip_id=t3.id, lat=s1.lat, lng=s1.lng,
         ts=base - timedelta(hours=1),
+    ))
+
+    # Trip 4 (Route Alpha, started 08:02) – only 1 VP at Stop A
+    # → bus is at seq 1, 2 stops away from Stop C (seq 3)
+    t4 = Trip(route_id=r1.id, start_time=base + timedelta(minutes=2))
+    db.add(t4)
+    db.flush()
+    db.add(VehiclePosition(
+        trip_id=t4.id, lat=s1.lat, lng=s1.lng,
+        ts=base + timedelta(minutes=2),
     ))
 
     db.commit()
