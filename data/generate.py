@@ -7,6 +7,7 @@ SQLAlchemy models in backend/app.
 Usage (from the project root):
     python data/generate.py
     python data/generate.py --days 30 --noise 0.3 --events 2
+    python data/generate.py --days 30 --start-date 2026-09-01
 
 See data/README.md for column documentation.
 """
@@ -143,6 +144,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--events", type=int, default=3,
         help="Number of special-event demand spikes to inject (default: 3)",
+    )
+    p.add_argument(
+        "--start-date", type=str, default=None,
+        help="Start date in YYYY-MM-DD format (default: today minus --days)",
     )
     return p.parse_args()
 
@@ -342,7 +347,10 @@ def generate_trips_and_positions(
 
 def main() -> None:
     args = parse_args()
-    base_date = datetime(2026, 10, 1)
+    if args.start_date:
+        base_date = datetime.strptime(args.start_date, "%Y-%m-%d")
+    else:
+        base_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=args.days)
 
     print(f"Generating data: {args.days} days, noise={args.noise}, events={args.events}")
     print(f"Base date: {base_date.date()}\n")
