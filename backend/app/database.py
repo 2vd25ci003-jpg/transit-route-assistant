@@ -1,7 +1,9 @@
 """SQLAlchemy engine, session factory, and declarative base."""
 
 from sqlalchemy import event, create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from collections.abc import Generator
+
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from app.config import DATABASE_URL
 
@@ -24,4 +26,13 @@ def _set_sqlite_pragma(dbapi_connection, _connection_record):  # type: ignore[no
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 Base = declarative_base()
+
+
+def get_db() -> Generator[Session, None, None]:
+    """FastAPI dependency – yields a DB session and closes it after the request."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
