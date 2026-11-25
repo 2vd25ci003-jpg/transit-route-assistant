@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { StartupSplash } from "@/components/StartupSplash";
+import { TransitIntro } from "@/components/intro/TransitIntro";
 import { CONFIG } from "@/lib/config";
 import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
@@ -37,7 +37,7 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface min-h-screen antialiased selection:bg-primary-container selection:text-on-primary-container">
         <I18nProvider>
-          <StartupSplash />
+          <TransitIntro />
           {children}
         </I18nProvider>
       </body>
