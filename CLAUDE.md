@@ -22,8 +22,8 @@ Read `SPEC.md` for scope and `PLAN.md` for the current task list before starting
 
 ## Design Source of Truth
 - Screens live in `/docs/design/<screen>/code.html` and `screen.png`: home_search, route_result, live_tracking, transit_operator_admin_dashboard.
-- **3D Redesign Approved**: Keep the existing teal/navy tokens below, and add visual depth via 3D glassmorphism cards (`backdrop-blur-xl`, translucent surfaces, subtle borders, layered shadows, and tilt-on-hover interactions) plus a 3D MapLibre GL JS + deck.gl map (with a flat 2D Lite mode fallback).
-- Tokens: surface `#0b1326`, surface-container-low `#131b2e`, surface-container `#171f33`, surface-container-highest `#2d3449`, primary-container `#14b8a6`, primary tint `#4fdbc8`, secondary `#7bd0ff`. Amber is used for delays and warnings.
+- **3D Redesign Approved**: Keep the Navy + White (primary) + Hot Pink (secondary) palette, and add visual depth via 3D glassmorphism cards (`backdrop-blur-xl`, translucent surfaces, subtle borders, layered shadows, and tilt-on-hover interactions) plus a 3D MapLibre GL JS + deck.gl map (with a flat 2D Lite mode fallback).
+- Tokens: surface `#071126`, surface-container-low `#0c1936`, surface-container `#112144`, surface-container-highest `#1f3666`, primary `#ffffff`, primary-container `#f8fafc`, secondary `#ff2e93`, tertiary `#ff70b8`.
 - Map stack: MapLibre GL JS + deck.gl with free OpenFreeMap vector tiles (no API key). Respect `prefers-reduced-motion`.
 - Icons: Material Symbols Outlined. Mobile-first for passenger screens; desktop layout for the admin dashboard.
 - Convert Stitch HTML into reusable React components (e.g. SearchCard, NearbyStopCard, BottomNav, StopTimeline, KpiCard). Do not paste the HTML as-is.
