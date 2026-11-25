@@ -5,6 +5,7 @@ import {
   LngLatBounds,
   Map as MapLibreMap,
   NavigationControl,
+  setWorkerUrl,
   type IControl,
 } from "maplibre-gl";
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -98,6 +99,9 @@ export function TransitMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // Point MapLibre's Web Worker to public/maplibre-gl-worker.js for Next.js Webpack compatibility
+    setWorkerUrl("/maplibre-gl-worker.js");
+
     const map = new MapLibreMap({
       container: containerRef.current,
       style: CONFIG.mapStyleUrl,
@@ -106,6 +110,38 @@ export function TransitMap({
       pitch: liteMode ? 0 : 55,
       bearing: liteMode ? 0 : -15,
       attributionControl: { compact: true },
+    });
+
+    // Fallback to OpenStreetMap raster tiles if vector style fails to load
+    let fallbackApplied = false;
+    map.on("error", (e) => {
+      const msg = String((e as { error?: { message?: string } })?.error?.message ?? "");
+      if (!fallbackApplied && (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("style"))) {
+        fallbackApplied = true;
+        map.setStyle({
+          version: 8,
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              attribution: "© OpenStreetMap contributors",
+            },
+          },
+          layers: [
+            {
+              id: "osm-tiles",
+              type: "raster",
+              source: "osm",
+              paint: {
+                "raster-brightness-max": 0.45,
+                "raster-saturation": -0.6,
+                "raster-contrast": 0.2,
+              },
+            },
+          ],
+        });
+      }
     });
 
     map.addControl(new NavigationControl({ visualizePitch: true }), "bottom-right");
