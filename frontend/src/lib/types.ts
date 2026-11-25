@@ -65,6 +65,8 @@ export interface Vehicle {
   lat: number;
   lng: number;
   ts: string;
+  speed_kmh?: number | null;
+  simulated?: boolean;
 }
 
 export interface ForecastPoint {

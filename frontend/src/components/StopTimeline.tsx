@@ -1,5 +1,7 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
+import { GlassCard } from "@/components/GlassCard";
 import type { RouteStop } from "@/lib/types";
 
 interface StopTimelineProps {
@@ -11,10 +13,11 @@ export function StopTimeline({
   stops,
   highlightStopIds = [],
 }: StopTimelineProps) {
+  const prefersReduced = useReducedMotion();
   if (stops.length === 0) return null;
 
   return (
-    <div className="flex flex-col w-full bg-surface-container rounded-2xl p-4">
+    <GlassCard enableTilt={false} className="w-full p-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
           Stop Progression ({stops.length} Stops)
@@ -25,7 +28,15 @@ export function StopTimeline({
       </div>
 
       <div className="relative flex flex-col">
-        <div className="absolute left-[13px] top-4 bottom-4 w-[2px] bg-surface-container-highest" />
+        {/* Animated route progress rail */}
+        <div className="absolute left-[13px] top-4 bottom-4 w-[2px] bg-surface-container-highest overflow-hidden rounded-full">
+          <motion.div
+            initial={{ height: prefersReduced ? "100%" : "0%" }}
+            animate={{ height: "100%" }}
+            transition={{ duration: prefersReduced ? 0 : 0.8, ease: "easeOut" }}
+            className="w-full bg-gradient-to-b from-primary via-secondary to-tertiary"
+          />
+        </div>
 
         {stops.map((rs, idx) => {
           const isFirst = idx === 0;
@@ -33,13 +44,16 @@ export function StopTimeline({
           const isHighlighted = highlightStopIds.includes(rs.stop.id);
 
           return (
-            <div
+            <motion.div
               key={`${rs.seq}-${rs.stop.id}`}
+              initial={prefersReduced ? false : { opacity: 0, x: -6 }}
+              animate={prefersReduced ? undefined : { opacity: 1, x: 0 }}
+              transition={{ delay: prefersReduced ? 0 : idx * 0.04 }}
               className="relative flex items-start gap-3 py-2 z-10"
             >
               <div className="shrink-0 w-7 flex justify-center pt-0.5">
                 {isFirst ? (
-                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-[0_0_12px_rgba(79,219,200,0.6)]">
                     <div className="w-2 h-2 rounded-full bg-surface-container-lowest" />
                   </div>
                 ) : isLast ? (
@@ -75,10 +89,10 @@ export function StopTimeline({
                   +{idx * 4}m
                 </span>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
-    </div>
+    </GlassCard>
   );
 }

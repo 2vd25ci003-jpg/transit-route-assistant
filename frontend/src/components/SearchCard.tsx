@@ -1,5 +1,7 @@
 "use client";
 
+import { GlassCard } from "@/components/GlassCard";
+import { useI18n } from "@/lib/i18n";
 import type { Stop } from "@/lib/types";
 
 interface SearchCardProps {
@@ -21,10 +23,11 @@ export function SearchCard({
   onSwap,
   onSearch,
 }: SearchCardProps) {
+  const { t } = useI18n();
   const quickStops = stops.slice(0, 4);
 
   return (
-    <div className="bg-surface-container rounded-xl p-4 shadow-xl flex flex-col gap-3 relative">
+    <GlassCard className="p-4 flex flex-col gap-3 relative">
       <div className="flex items-center gap-3 relative">
         {/* Route Connector Graphic */}
         <div className="flex flex-col items-center justify-between h-20 py-2.5 shrink-0">
@@ -35,7 +38,7 @@ export function SearchCard({
 
         {/* Inputs */}
         <div className="flex-1 flex flex-col gap-2 min-w-0">
-          <div className="flex items-center bg-surface-container-lowest rounded-lg px-3 h-12 shadow-inner">
+          <div className="flex items-center bg-surface-container-lowest/90 border border-white/5 rounded-xl px-3 h-12 shadow-inner">
             <span className="material-symbols-outlined text-primary text-[20px] mr-2">
               my_location
             </span>
@@ -48,7 +51,7 @@ export function SearchCard({
               className="bg-transparent text-on-surface text-sm w-full focus:outline-none cursor-pointer"
             >
               <option value="" className="bg-surface-container text-outline">
-                Select origin stop...
+                {t("originPlaceholder")}
               </option>
               {stops.map((s) => (
                 <option
@@ -62,7 +65,7 @@ export function SearchCard({
             </select>
           </div>
 
-          <div className="flex items-center bg-surface-container-lowest rounded-lg px-3 h-12 shadow-inner">
+          <div className="flex items-center bg-surface-container-lowest/90 border border-white/5 rounded-xl px-3 h-12 shadow-inner">
             <span className="material-symbols-outlined text-tertiary text-[20px] mr-2">
               search
             </span>
@@ -75,7 +78,7 @@ export function SearchCard({
               className="bg-transparent text-on-surface text-sm w-full focus:outline-none cursor-pointer"
             >
               <option value="" className="bg-surface-container text-outline">
-                Select destination stop...
+                {t("destPlaceholder")}
               </option>
               {stops.map((s) => (
                 <option
@@ -90,12 +93,12 @@ export function SearchCard({
           </div>
         </div>
 
-        {/* Swap Button */}
+        {/* Swap Button (44px min tap target) */}
         <button
           type="button"
           onClick={onSwap}
           aria-label="Swap origin and destination"
-          className="w-10 h-10 rounded-full bg-surface-bright text-on-surface hover:text-primary flex items-center justify-center shadow-lg active:scale-90 transition-transform shrink-0"
+          className="w-11 h-11 rounded-full bg-surface-bright text-on-surface hover:text-primary flex items-center justify-center shadow-lg active:scale-90 transition-transform shrink-0"
         >
           <span className="material-symbols-outlined text-[20px]">
             swap_vert
@@ -111,7 +114,7 @@ export function SearchCard({
               key={s.id}
               type="button"
               onClick={() => onChangeTo(s.id)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface text-xs font-semibold shrink-0 hover:bg-primary-container hover:text-on-primary-container transition-colors"
+              className="flex items-center gap-1 px-3 min-h-[44px] rounded-full bg-surface-container-high/90 text-on-surface text-xs font-semibold shrink-0 hover:bg-primary-container hover:text-on-primary-container transition-colors"
             >
               <span className="material-symbols-outlined text-[14px] text-primary">
                 directions_bus
@@ -122,18 +125,18 @@ export function SearchCard({
         </div>
       )}
 
-      {/* Search CTA */}
+      {/* Search CTA (44px min height) */}
       <button
         type="button"
         disabled={fromId === "" || toId === "" || fromId === toId}
         onClick={onSearch}
-        className="w-full h-11 rounded-xl bg-primary-container hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-on-primary-container font-semibold text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+        className="w-full min-h-[44px] rounded-xl bg-primary-container hover:bg-primary disabled:opacity-40 disabled:cursor-not-allowed text-on-primary-container font-semibold text-sm flex items-center justify-center gap-2 shadow-md transition-all"
       >
         <span className="material-symbols-outlined text-[18px]">
           directions
         </span>
-        <span>Find Routes</span>
+        <span>{t("findRoutes")}</span>
       </button>
-    </div>
+    </GlassCard>
   );
 }

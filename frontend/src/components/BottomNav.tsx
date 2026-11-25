@@ -2,20 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
-const NAV_ITEMS = [
-  { href: "/", label: "Search", icon: "search" },
-  { href: "/routes", label: "Routes", icon: "alt_route" },
-  { href: "/map", label: "Google Map", icon: "map" },
-  { href: "/live", label: "Live", icon: "radar" },
-  { href: "/admin", label: "Admin", icon: "monitoring" },
-] as const;
+const NAV_ITEMS: ReadonlyArray<{
+  href: string;
+  labelKey: TranslationKey;
+  icon: string;
+}> = [
+  { href: "/", labelKey: "searchNav", icon: "search" },
+  { href: "/routes", labelKey: "routesNav", icon: "alt_route" },
+  { href: "/map", labelKey: "mapNav", icon: "3d_rotation" },
+  { href: "/live", labelKey: "liveNav", icon: "radar" },
+  { href: "/admin", labelKey: "adminNav", icon: "monitoring" },
+];
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl border-t border-outline-variant/30 shadow-[0_-4px_16px_rgba(0,0,0,0.35)]">
+    <nav className="fixed bottom-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
       <div className="max-w-lg mx-auto flex justify-around items-center h-16 px-2">
         {NAV_ITEMS.map((item) => {
           const active =
@@ -26,7 +32,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center min-w-[50px] min-h-[48px] px-1.5 transition-colors ${
+              className={`flex flex-col items-center justify-center min-w-[48px] min-h-[44px] px-2 rounded-xl transition-colors ${
                 active
                   ? "text-primary font-bold"
                   : "text-on-surface-variant hover:text-on-surface"
@@ -43,7 +49,7 @@ export function BottomNav() {
                 {item.icon}
               </span>
               <span className="text-[10px] font-medium mt-0.5 whitespace-nowrap">
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </Link>
           );

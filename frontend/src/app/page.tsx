@@ -3,40 +3,59 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
+import { GlassCard } from "@/components/GlassCard";
 import { NearbyStopCard } from "@/components/NearbyStopCard";
 import { SearchCard } from "@/components/SearchCard";
 import { api } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
-import type { EtaItem, NearbyStop, Stop, Vehicle } from "@/lib/types";
+import { useI18n } from "@/lib/i18n";
+import {
+  FAVORITE_ROUTES_KEY,
+  readIdList,
+  SAVED_STOPS_KEY,
+  toggleStoredId,
+} from "@/lib/storage";
+import type { EtaItem, NearbyStop, Route, Stop, Vehicle } from "@/lib/types";
 
 export default function HomePage() {
   const router = useRouter();
+  const { locale, setLocale, t } = useI18n();
+
   const [stops, setStops] = useState<Stop[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [nearby, setNearby] = useState<NearbyStop[]>([]);
   const [etasByStop, setEtasByStop] = useState<Record<number, EtaItem[]>>({});
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [savedStopIds, setSavedStopIds] = useState<number[]>([]);
+  const [favoriteRouteIds, setFavoriteRouteIds] = useState<number[]>([]);
   const [fromId, setFromId] = useState<number | "">("");
   const [toId, setToId] = useState<number | "">("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setSavedStopIds(readIdList(SAVED_STOPS_KEY));
+    setFavoriteRouteIds(readIdList(FAVORITE_ROUTES_KEY));
+
     let mounted = true;
     async function load() {
       try {
         setLoading(true);
-        const [allStops, nearbyStops, activeVehicles] = await Promise.all([
-          api.getStops(),
-          api.getNearbyStops(
-            CONFIG.mapCenter.lat,
-            CONFIG.mapCenter.lng,
-            15000
-          ),
-          api.getVehicles(),
-        ]);
+        const [allStops, allRoutes, nearbyStops, activeVehicles] =
+          await Promise.all([
+            api.getStops(),
+            api.getRoutes(),
+            api.getNearbyStops(
+              CONFIG.mapCenter.lat,
+              CONFIG.mapCenter.lng,
+              15000
+            ),
+            api.getVehicles(),
+          ]);
 
         if (!mounted) return;
         setStops(allStops);
+        setRoutes(allRoutes);
         setNearby(nearbyStops.slice(0, 4));
         setVehicles(activeVehicles);
 
@@ -83,49 +102,67 @@ export default function HomePage() {
     router.push(`/routes?from=${fromId}&to=${toId}`);
   }
 
+  const slowVehicles = vehicles.filter(
+    (v) => v.speed_kmh !== undefined && v.speed_kmh !== null && v.speed_kmh < 15
+  );
+  const savedStops = stops.filter((s) => savedStopIds.includes(s.id));
+  const favoriteRoutes = routes.filter((r) => favoriteRouteIds.includes(r.id));
+
   return (
     <div className="min-h-screen bg-surface text-on-surface pb-24">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20">
-        <div className="max-w-lg mx-auto h-14 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+      <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-2xl border-b border-white/10">
+        <div className="max-w-lg mx-auto h-14 px-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[20px]">
                 directions_bus
               </span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[11px] text-on-surface-variant uppercase tracking-wider">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] text-on-surface-variant uppercase tracking-wider truncate">
                 {CONFIG.cityName}
               </span>
-              <span className="text-sm font-semibold text-on-surface leading-none">
-                Transit Search
+              <span className="text-sm font-semibold text-on-surface leading-none truncate">
+                {t("appTitle")}
               </span>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => router.push("/admin")}
-            className="px-3 py-1.5 rounded-full bg-surface-container-high text-xs font-semibold text-primary hover:bg-primary hover:text-on-primary transition-colors"
-          >
-            Operator Ops
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* English / Kannada Toggle (44px tap target) */}
+            <button
+              type="button"
+              onClick={() => setLocale(locale === "en" ? "kn" : "en")}
+              aria-label="Switch language between English and Kannada"
+              className="min-h-[44px] min-w-[44px] px-3 rounded-full bg-surface-container-high text-xs font-bold text-secondary hover:bg-surface-bright transition-colors"
+            >
+              {locale === "en" ? "ಕನ್ನಡ" : "EN"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push("/admin")}
+              className="min-h-[44px] px-3 rounded-full bg-surface-container-high text-xs font-semibold text-primary hover:bg-primary hover:text-on-primary transition-colors"
+            >
+              {t("operatorOps")}
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 pt-4 flex flex-col gap-5">
+      <main className="max-w-lg mx-auto px-4 pt-4 flex flex-col gap-4">
         {/* Greeting */}
         <div className="flex items-center justify-between">
           <div>
             <span className="text-[11px] uppercase tracking-wider text-primary font-semibold">
-              Live Dispatch Active
+              {t("liveDispatch")}
             </span>
             <h1 className="text-2xl font-bold text-on-surface mt-0.5">
               {CONFIG.cityName} Transit
             </h1>
           </div>
-          <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+          <div className="w-11 h-11 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
             <span
               className="material-symbols-outlined text-[22px]"
               style={{ fontVariationSettings: "'FILL' 1" }}
@@ -134,6 +171,37 @@ export default function HomePage() {
             </span>
           </div>
         </div>
+
+        {/* Service Alerts Banner */}
+        <GlassCard
+          enableTilt={false}
+          className={`p-3.5 flex items-center gap-3 ${
+            slowVehicles.length > 0
+              ? "border-tertiary/40 bg-tertiary/10"
+              : "border-primary/25"
+          }`}
+        >
+          <span
+            className={`material-symbols-outlined text-[20px] shrink-0 ${
+              slowVehicles.length > 0 ? "text-tertiary" : "text-primary"
+            }`}
+          >
+            {slowVehicles.length > 0 ? "warning" : "check_circle"}
+          </span>
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="text-xs font-semibold text-on-surface">
+              {t("serviceAlerts")}
+            </span>
+            <span className="text-[11px] text-on-surface-variant">
+              {slowVehicles.length > 0
+                ? t("bunchingAdvisory")
+                : t("allNormal")}
+            </span>
+          </div>
+          <span className="text-xs font-mono font-bold text-primary shrink-0">
+            {vehicles.length} {t("activeVehicles")}
+          </span>
+        </GlassCard>
 
         {/* Search Card */}
         <SearchCard
@@ -146,19 +214,17 @@ export default function HomePage() {
           onSearch={handleSearch}
         />
 
-        {/* Quick Action Shortcuts */}
+        {/* Quick Shortcuts (44px+ tap targets) */}
         <div className="grid grid-cols-4 gap-2">
           <button
             type="button"
             disabled
             title="Coming soon"
-            className="flex flex-col items-center justify-center p-2.5 bg-surface-container rounded-xl opacity-60 cursor-not-allowed text-center"
+            className="flex flex-col items-center justify-center min-h-[68px] p-2 bg-surface-container/60 rounded-xl opacity-55 cursor-not-allowed text-center"
           >
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-outline mb-1">
-              <span className="material-symbols-outlined text-[20px]">
-                contactless
-              </span>
-            </div>
+            <span className="material-symbols-outlined text-[20px] text-outline mb-1">
+              contactless
+            </span>
             <span className="text-[11px] text-on-surface-variant leading-tight">
               Coming soon
             </span>
@@ -167,95 +233,117 @@ export default function HomePage() {
           <button
             type="button"
             onClick={() => router.push("/routes")}
-            className="flex flex-col items-center justify-center p-2.5 bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors text-center"
+            className="flex flex-col items-center justify-center min-h-[68px] p-2 bg-surface-container/80 backdrop-blur-md border border-white/5 rounded-xl hover:bg-surface-container-high transition-colors text-center"
           >
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary mb-1">
-              <span className="material-symbols-outlined text-[20px]">map</span>
-            </div>
+            <span className="material-symbols-outlined text-[20px] text-primary mb-1">
+              alt_route
+            </span>
             <span className="text-[11px] text-on-surface leading-tight">
-              Route Map
+              {t("routesNav")}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/map")}
+            className="flex flex-col items-center justify-center min-h-[68px] p-2 bg-surface-container/80 backdrop-blur-md border border-white/5 rounded-xl hover:bg-surface-container-high transition-colors text-center"
+          >
+            <span className="material-symbols-outlined text-[20px] text-secondary mb-1">
+              3d_rotation
+            </span>
+            <span className="text-[11px] text-on-surface leading-tight">
+              {t("mapNav")}
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => router.push("/live")}
-            className="flex flex-col items-center justify-center p-2.5 bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors text-center"
+            className="flex flex-col items-center justify-center min-h-[68px] p-2 bg-surface-container/80 backdrop-blur-md border border-white/5 rounded-xl hover:bg-surface-container-high transition-colors text-center"
           >
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary mb-1">
-              <span className="material-symbols-outlined text-[20px]">
-                radar
-              </span>
-            </div>
-            <span className="text-[11px] text-on-surface leading-tight">
-              Live Radar
+            <span className="material-symbols-outlined text-[20px] text-primary mb-1">
+              radar
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => router.push("/admin")}
-            className="flex flex-col items-center justify-center p-2.5 bg-surface-container rounded-xl hover:bg-surface-container-high transition-colors text-center"
-          >
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary mb-1">
-              <span className="material-symbols-outlined text-[20px]">
-                analytics
-              </span>
-            </div>
             <span className="text-[11px] text-on-surface leading-tight">
-              Analytics
+              {t("liveNav")}
             </span>
           </button>
         </div>
 
-        {/* Live Signal Banner */}
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-high shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
-            </span>
-            <span className="text-xs font-semibold text-on-surface">
-              {CONFIG.cityName} Signal: Active
-            </span>
-          </div>
-          <span className="text-xs font-semibold text-primary">
-            {vehicles.length} Active Vehicles
-          </span>
-        </div>
+        {/* Saved Stops & Favorite Routes (from localStorage) */}
+        {(savedStops.length > 0 || favoriteRoutes.length > 0) && (
+          <GlassCard enableTilt={false} className="p-3.5 flex flex-col gap-2.5">
+            {savedStops.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-tertiary">
+                  {t("savedStops")}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {savedStops.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setFromId(s.id)}
+                      className="min-h-[44px] px-3 rounded-xl bg-surface-container-high text-xs font-semibold text-on-surface hover:text-primary"
+                    >
+                      ★ {s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {favoriteRoutes.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  {t("favoriteRoutes")}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {favoriteRoutes.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => router.push("/routes")}
+                      className="min-h-[44px] px-3 rounded-xl bg-surface-container-high text-xs font-semibold text-on-surface hover:text-primary"
+                    >
+                      ♥ {r.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </GlassCard>
+        )}
 
-        {/* Error state */}
         {error && (
           <div className="p-3 rounded-xl bg-error-container text-on-error-container text-xs">
-            {error} — Make sure the FastAPI backend is running at{" "}
-            <code>{CONFIG.apiUrl}</code>.
+            {error} — Make sure FastAPI is running at <code>{CONFIG.apiUrl}</code>.
           </div>
         )}
 
         {/* Nearby Stops */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-[20px]">
               explore
             </span>
             <h2 className="text-lg font-semibold text-on-surface">
-              Nearby Stops
+              {t("nearbyStops")}
             </h2>
           </div>
           <button
             type="button"
-            onClick={() => router.push("/live")}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            onClick={() => router.push("/map")}
+            className="min-h-[44px] px-2 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
-            <span>Map radar</span>
+            <span>{t("mapNav")}</span>
             <span className="material-symbols-outlined text-[16px]">
-              radar
+              3d_rotation
             </span>
           </button>
         </div>
 
         {loading ? (
-          <div className="p-6 rounded-xl bg-surface-container text-center text-sm text-on-surface-variant">
+          <div className="p-6 rounded-2xl bg-surface-container/70 text-center text-sm text-on-surface-variant">
             Loading stops and live ETAs...
           </div>
         ) : (
@@ -265,9 +353,11 @@ export default function HomePage() {
                 key={stop.id}
                 stop={stop}
                 etas={etasByStop[stop.id] ?? []}
-                onSelectStop={(id) => {
-                  setFromId(id);
-                }}
+                saved={savedStopIds.includes(stop.id)}
+                onToggleSave={(id) =>
+                  setSavedStopIds(toggleStoredId(SAVED_STOPS_KEY, id))
+                }
+                onSelectStop={(id) => setFromId(id)}
               />
             ))}
           </div>
