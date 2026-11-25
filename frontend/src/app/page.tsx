@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/BottomNav";
 import { GlassCard } from "@/components/GlassCard";
-import { HeroBusAnimation } from "@/components/HeroBusAnimation";
 import { NearbyStopCard } from "@/components/NearbyStopCard";
 import { SearchCard } from "@/components/SearchCard";
 import { TopNav } from "@/components/TopNav";
@@ -113,9 +112,8 @@ export default function HomePage() {
   const focusStop = stops.find((s) => s.id === Number(fromId)) ?? null;
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface pb-24 md:pb-10 overflow-x-hidden">
+    <div className="min-h-screen bg-surface text-on-surface pb-24 md:pb-10">
       <TopNav />
-      <HeroBusAnimation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Search, Alerts, Shortcuts, Saved */}
