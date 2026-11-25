@@ -142,22 +142,22 @@ function SceneChoreography({
 
   return (
     <>
-      <color attach="background" args={["#040812"]} />
-      <fog attach="fog" args={["#040812", 14, 72]} />
+      <color attach="background" args={["#faf6ef"]} />
+      <fog attach="fog" args={["#faf6ef", 16, 72]} />
 
-      <ambientLight intensity={0.28} color="#94a3b8" />
+      <ambientLight intensity={0.85} color="#faf6ef" />
       <directionalLight
-        position={[12, 18, 10]}
-        intensity={0.9}
-        color="#cbd5e1"
+        position={[12, 20, 12]}
+        intensity={1.45}
+        color="#fffdf9"
         castShadow={!lowQuality}
         shadow-mapSize-width={lowQuality ? 512 : 1024}
         shadow-mapSize-height={lowQuality ? 512 : 1024}
       />
       <directionalLight
-        position={[-10, 6, -8]}
-        intensity={0.55}
-        color="#38bdf8"
+        position={[-10, 8, -8]}
+        intensity={0.5}
+        color="#003153"
       />
 
       <CityEnvironment lowQuality={lowQuality} />

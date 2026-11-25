@@ -22,8 +22,8 @@ const LANE_MARK_Z = [-48, -41, -34, -27, -20, -13, -6, 1, 8, 15];
 export function CityEnvironment({ lowQuality = false }: CityEnvironmentProps) {
   const buildings = useMemo<BuildingSpec[]>(() => {
     const items: BuildingSpec[] = [];
-    const palette = ["#09131f", "#0d1a2b", "#0a1626", "#101e31"];
-    const accents = ["#fde68a", "#38bdf8", "#fbbf24", "#7dd3fc"];
+    const palette = ["#003153", "#0a3d62", "#1c4b6e", "#00223b"];
+    const accents = ["#faf6ef", "#d64527", "#f2eadc", "#e05336"];
 
     for (let i = 0; i < 8; i++) {
       const z = -48 + i * 9;
@@ -59,30 +59,30 @@ export function CityEnvironment({ lowQuality = false }: CityEnvironmentProps) {
       >
         <planeGeometry args={[10.5, 90]} />
         <meshStandardMaterial
-          color="#0f1520"
-          roughness={0.62}
-          metalness={0.22}
+          color="#0a243a"
+          roughness={0.68}
+          metalness={0.18}
         />
       </mesh>
 
       {/* Sidewalks (Left & Right) */}
       <mesh position={[-6.8, 0.12, -16]} receiveShadow>
         <boxGeometry args={[3.2, 0.24, 90]} />
-        <meshStandardMaterial color="#162030" roughness={0.85} />
+        <meshStandardMaterial color="#e9dfd0" roughness={0.85} />
       </mesh>
       <mesh position={[6.8, 0.12, -16]} receiveShadow>
         <boxGeometry args={[3.2, 0.24, 90]} />
-        <meshStandardMaterial color="#162030" roughness={0.85} />
+        <meshStandardMaterial color="#e9dfd0" roughness={0.85} />
       </mesh>
 
       {/* Road Edge Lines */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-4.5, 0.015, -16]}>
         <planeGeometry args={[0.14, 90]} />
-        <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
+        <meshStandardMaterial color="#faf6ef" roughness={0.5} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[4.5, 0.015, -16]}>
         <planeGeometry args={[0.14, 90]} />
-        <meshStandardMaterial color="#e2e8f0" roughness={0.5} />
+        <meshStandardMaterial color="#faf6ef" roughness={0.5} />
       </mesh>
 
       {/* Dashed Center Lane Markings */}
@@ -90,8 +90,8 @@ export function CityEnvironment({ lowQuality = false }: CityEnvironmentProps) {
         <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, z]}>
           <planeGeometry args={[0.18, 3.2]} />
           <meshStandardMaterial
-            color="#f59e0b"
-            emissive="#f59e0b"
+            color="#d64527"
+            emissive="#d64527"
             emissiveIntensity={0.25}
           />
         </mesh>

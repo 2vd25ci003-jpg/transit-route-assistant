@@ -79,12 +79,12 @@ export function GPSRouteAnimation({
 
   return (
     <group>
-      {/* Glowing Blue/Cyan GPS Path */}
+      {/* Glowing Lobster Red / Prussian Blue GPS Path */}
       <mesh geometry={tubeGeo}>
         <meshStandardMaterial
           ref={tubeMatRef}
-          color="#38bdf8"
-          emissive="#0ea5e9"
+          color="#d64527"
+          emissive="#d64527"
           emissiveIntensity={0}
           transparent
           opacity={0}
@@ -94,7 +94,7 @@ export function GPSRouteAnimation({
       {/* Streaming Navigation Particles */}
       <points ref={particlesRef} geometry={particleGeo}>
         <pointsMaterial
-          color="#bae6fd"
+          color="#faf6ef"
           size={0.28}
           transparent
           opacity={0}
@@ -115,9 +115,9 @@ export function GPSRouteAnimation({
         >
           <ringGeometry args={[0.38, 0.58, 24]} />
           <meshStandardMaterial
-            color="#38bdf8"
-            emissive="#38bdf8"
-            emissiveIntensity={2.5}
+            color="#d64527"
+            emissive="#e05336"
+            emissiveIntensity={2.2}
             transparent
             opacity={0}
             side={THREE.DoubleSide}

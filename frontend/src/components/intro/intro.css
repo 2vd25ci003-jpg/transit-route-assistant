@@ -1,32 +1,31 @@
-.transit-intro-overlay {
+.transit-intro-radial {
   background: radial-gradient(
     ellipse at 50% 42%,
-    rgba(6, 20, 44, 0.25) 0%,
-    rgba(3, 8, 20, 0.78) 72%,
-    rgba(2, 5, 14, 0.96) 100%
+    rgba(250, 246, 239, 0.04) 0%,
+    rgba(250, 246, 239, 0.35) 68%,
+    rgba(242, 234, 220, 0.88) 100%
   );
 }
 
 .transit-intro-title-glow {
   text-shadow:
-    0 0 24px rgba(56, 189, 248, 0.55),
-    0 0 60px rgba(14, 165, 233, 0.35);
+    0 2px 18px rgba(250, 246, 239, 0.9),
+    0 4px 28px rgba(0, 49, 83, 0.18);
 }
 
-.transit-intro-letterbox-top,
-.transit-intro-letterbox-bottom {
+.transit-intro-letterbox-top {
   background: linear-gradient(
     to bottom,
-    rgba(2, 6, 16, 0.92),
-    rgba(2, 6, 16, 0)
+    rgba(250, 246, 239, 0.95),
+    rgba(250, 246, 239, 0)
   );
 }
 
 .transit-intro-letterbox-bottom {
   background: linear-gradient(
     to top,
-    rgba(2, 6, 16, 0.96),
-    rgba(2, 6, 16, 0.55) 60%,
-    rgba(2, 6, 16, 0)
+    rgba(250, 246, 239, 0.96),
+    rgba(250, 246, 239, 0.65) 55%,
+    rgba(250, 246, 239, 0)
   );
 }

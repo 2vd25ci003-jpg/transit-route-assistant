@@ -23,9 +23,9 @@ export function SkipIntro({
         onClick={onToggleSound}
         aria-label={soundEnabled ? "Mute intro sound" : "Enable intro sound"}
         title={soundEnabled ? "Sound ON" : "Sound Muted"}
-        className="min-h-[44px] min-w-[44px] px-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 text-white/90 flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer"
+        className="min-h-[44px] min-w-[44px] px-3 rounded-full bg-[#faf6ef]/85 hover:bg-[#f2eadc] backdrop-blur-md border border-[#d8cebe] text-[#003153] flex items-center justify-center gap-1.5 text-xs font-semibold shadow-sm transition-colors cursor-pointer"
       >
-        <span className="material-symbols-outlined text-[18px] text-sky-300">
+        <span className="material-symbols-outlined text-[18px] text-[#d64527]">
           {soundEnabled ? "volume_up" : "volume_off"}
         </span>
         <span className="hidden sm:inline">
@@ -38,7 +38,7 @@ export function SkipIntro({
         type="button"
         onClick={onToggleQuality}
         aria-label="Toggle 3D rendering quality"
-        className="min-h-[44px] px-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 text-white/85 text-xs font-mono font-semibold transition-colors cursor-pointer"
+        className="min-h-[44px] px-3 rounded-full bg-[#faf6ef]/85 hover:bg-[#f2eadc] backdrop-blur-md border border-[#d8cebe] text-[#003153] text-xs font-mono font-semibold shadow-sm transition-colors cursor-pointer"
       >
         {lowQuality ? "3D Lite" : "3D HD"}
       </button>
@@ -47,7 +47,7 @@ export function SkipIntro({
       <button
         type="button"
         onClick={onSkip}
-        className="min-h-[44px] px-4 rounded-full bg-white/15 hover:bg-sky-500 hover:text-slate-950 backdrop-blur-md border border-white/25 text-white text-xs font-bold tracking-wider uppercase transition-all cursor-pointer"
+        className="min-h-[44px] px-4 rounded-full bg-[#003153] hover:bg-[#d64527] text-[#faf6ef] border border-[#003153] hover:border-[#d64527] text-xs font-bold tracking-wider uppercase shadow-sm transition-all cursor-pointer"
       >
         Skip Intro →
       </button>
