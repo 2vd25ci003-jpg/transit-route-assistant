@@ -28,6 +28,7 @@ export default function AdminDashboardPage() {
   const [fleetSize, setFleetSize] = useState<number>(2);
   const [optResult, setOptResult] = useState<OptimizeResponse | null>(null);
   const [optLoading, setOptLoading] = useState(false);
+  const [selectedHour, setSelectedHour] = useState<number>(9);
   const [error, setError] = useState<string | null>(null);
 
   async function loadDashboard(keyOverride?: string) {
@@ -345,21 +346,35 @@ export default function AdminDashboardPage() {
           {/* Map + Headway Variance */}
           <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-7 bg-surface-container-low rounded-xl p-5 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-base font-semibold text-on-surface">
-                    Corridor Demand Heatmap & Live Fleet
+                    3D Corridor Demand &amp; Live Fleet
                   </h2>
                   <p className="text-xs text-on-surface-variant">
-                    Circle radius & amber color indicate higher average hourly
-                    boardings
+                    3D column height reflects stop demand at {selectedHour}:00
                   </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-on-surface-variant font-mono">
+                    {selectedHour}:00
+                  </span>
+                  <input
+                    type="range"
+                    min={6}
+                    max={21}
+                    value={selectedHour}
+                    onChange={(e) => setSelectedHour(Number(e.target.value))}
+                    aria-label="Time of day slider"
+                    className="accent-primary cursor-pointer"
+                  />
                 </div>
               </div>
 
               <TransitMap
                 stopDemands={analytics?.stop_demands ?? []}
                 vehicles={vehicles}
+                selectedHour={selectedHour}
                 heightClass="h-[380px]"
               />
             </div>

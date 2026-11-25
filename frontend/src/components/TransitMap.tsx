@@ -1,306 +1,503 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type * as LType from "leaflet";
-import { CONFIG, hasGoogleMapsKey } from "@/lib/config";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  LngLatBounds,
+  Map as MapLibreMap,
+  NavigationControl,
+  type IControl,
+} from "maplibre-gl";
+import { MapboxOverlay } from "@deck.gl/mapbox";
+import { ColumnLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { CONFIG } from "@/lib/config";
 import type { Stop, StopDemand, Vehicle } from "@/lib/types";
-import { GoogleMap } from "./maps/GoogleMap";
-import { BusStopMarkers } from "./maps/BusStopMarkers";
-import { MapControls } from "./maps/MapControls";
-import { LocationMarker } from "./maps/LocationMarker";
+
+export interface DispatchOverlayRoute {
+  vehicle_id: number;
+  stops: Stop[];
+}
 
 interface TransitMapProps {
   stops?: Stop[];
   vehicles?: Vehicle[];
   polylineStops?: Stop[];
   stopDemands?: StopDemand[];
+  dispatchRoutes?: DispatchOverlayRoute[];
+  focusStop?: Stop | null;
+  selectedHour?: number;
   heightClass?: string;
-  enableGoogleMapsToggle?: boolean;
+  onSelectStop?: (stop: Stop) => void;
 }
+
+// Normalized hourly multiplier (hours 6..21) for time-of-day 3D demand slider
+const HOURLY_PROFILE: Record<number, number> = {
+  6: 0.35,
+  7: 0.65,
+  8: 1.6,
+  9: 1.8,
+  10: 1.2,
+  11: 0.8,
+  12: 0.95,
+  13: 0.8,
+  14: 0.65,
+  15: 0.7,
+  16: 0.95,
+  17: 1.6,
+  18: 1.8,
+  19: 1.3,
+  20: 0.8,
+  21: 0.35,
+};
+
+const DISPATCH_COLORS: [number, number, number][] = [
+  [79, 219, 200],
+  [123, 208, 255],
+  [255, 185, 95],
+  [244, 114, 182],
+  [167, 139, 250],
+];
 
 export function TransitMap({
   stops = [],
   vehicles = [],
   polylineStops = [],
   stopDemands = [],
-  heightClass = "h-[360px]",
-  enableGoogleMapsToggle = true,
+  dispatchRoutes = [],
+  focusStop = null,
+  selectedHour = 9,
+  heightClass = "h-[380px]",
+  onSelectStop,
 }: TransitMapProps) {
-  const [provider, setProvider] = useState<"google" | "leaflet">(() =>
-    hasGoogleMapsKey() ? "google" : "leaflet"
-  );
-
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<LType.Map | null>(null);
-  const layerGroupRef = useRef<LType.LayerGroup | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const overlayRef = useRef<MapboxOverlay | null>(null);
 
-  // Google Map instance references
-  const [gMap, setGMap] = useState<google.maps.Map | null>(null);
-  const vehicleMarkersRef = useRef<google.maps.Marker[]>([]);
-  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [liteMode, setLiteMode] = useState(false);
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    title: string;
+    subtitle: string;
+  } | null>(null);
 
-  // Leaflet initialization (used when provider === 'leaflet' or fallback)
+  // Detect prefers-reduced-motion
   useEffect(() => {
-    if (provider !== "leaflet") return;
-    let cancelled = false;
-
-    async function init() {
-      if (!containerRef.current || mapRef.current) return;
-      const L = await import("leaflet");
-      if (cancelled || !containerRef.current) return;
-
-      const map = L.map(containerRef.current, {
-        center: [CONFIG.mapCenter.lat, CONFIG.mapCenter.lng],
-        zoom: 12,
-        zoomControl: true,
-      });
-
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(map);
-
-      const group = L.layerGroup().addTo(map);
-      mapRef.current = map;
-      layerGroupRef.current = group;
-    }
-
-    init();
-
-    return () => {
-      cancelled = true;
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-        layerGroupRef.current = null;
-      }
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => {
+      setPrefersReducedMotion(mq.matches);
+      if (mq.matches) setLiteMode(true);
     };
-  }, [provider]);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
-  // Leaflet layers rendering
+  // Initialize MapLibre GL JS + Deck.gl MapboxOverlay once
   useEffect(() => {
-    if (provider !== "leaflet") return;
-    let active = true;
+    if (!containerRef.current || mapRef.current) return;
 
-    async function renderLayers() {
-      const map = mapRef.current;
-      const group = layerGroupRef.current;
-      if (!map || !group) return;
-      const L = await import("leaflet");
-      if (!active) return;
-
-      group.clearLayers();
-      const boundsPts: [number, number][] = [];
-
-      // Demand heatmap circles
-      if (stopDemands.length > 0) {
-        const maxDemand = Math.max(
-          1,
-          ...stopDemands.map((d) => d.avg_hourly_boardings)
-        );
-        for (const d of stopDemands) {
-          const ratio = d.avg_hourly_boardings / maxDemand;
-          const color =
-            ratio > 0.7 ? "#ffb95f" : ratio > 0.4 ? "#4fdbc8" : "#7bd0ff";
-          L.circleMarker([d.lat, d.lng], {
-            radius: 10 + ratio * 18,
-            color,
-            fillColor: color,
-            fillOpacity: 0.3,
-            weight: 1.5,
-          })
-            .bindPopup(
-              `<strong>${d.stop_name}</strong><br/>Avg: ${d.avg_hourly_boardings} pax/hr<br/>Peak: ${d.peak_hour}:00`
-            )
-            .addTo(group);
-          boundsPts.push([d.lat, d.lng]);
-        }
-      }
-
-      // Stops
-      for (const s of stops) {
-        L.circleMarker([s.lat, s.lng], {
-          radius: 5,
-          color: "#4fdbc8",
-          fillColor: "#060e20",
-          fillOpacity: 1,
-          weight: 2,
-        })
-          .bindPopup(`<strong>${s.name}</strong><br/>Stop #${s.id}`)
-          .addTo(group);
-        boundsPts.push([s.lat, s.lng]);
-      }
-
-      // Route Polyline
-      if (polylineStops.length >= 2) {
-        const latLngs: [number, number][] = polylineStops.map((s) => [
-          s.lat,
-          s.lng,
-        ]);
-        L.polyline(latLngs, {
-          color: "#4fdbc8",
-          weight: 4,
-          opacity: 0.9,
-        }).addTo(group);
-        for (const pt of latLngs) boundsPts.push(pt);
-      }
-
-      // Live Vehicles
-      for (const v of vehicles) {
-        const icon = L.divIcon({
-          className: "custom-bus-marker",
-          html: `<div style="background:#14b8a6;color:#00201c;font-weight:800;font-size:10px;padding:2px 6px;border-radius:6px;border:2px solid #060e20;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.6);">R${v.route_id}</div>`,
-          iconSize: [32, 20],
-          iconAnchor: [16, 10],
-        });
-        L.marker([v.lat, v.lng], { icon })
-          .bindPopup(
-            `<strong>${v.route_name}</strong><br/>Trip #${v.trip_id}<br/>${new Date(v.ts).toLocaleTimeString()}`
-          )
-          .addTo(group);
-        boundsPts.push([v.lat, v.lng]);
-      }
-
-      if (boundsPts.length >= 2) {
-        map.fitBounds(boundsPts, { padding: [24, 24], maxZoom: 14 });
-      }
-    }
-
-    renderLayers();
-    return () => {
-      active = false;
-    };
-  }, [provider, stops, vehicles, polylineStops, stopDemands]);
-
-  // Google Maps custom vehicle markers & polyline update
-  useEffect(() => {
-    if (provider !== "google" || !gMap) return;
-
-    // Clear old vehicle markers
-    vehicleMarkersRef.current.forEach((m) => m.setMap(null));
-    vehicleMarkersRef.current = [];
-
-    // Clear old polyline
-    if (polylineRef.current) {
-      polylineRef.current.setMap(null);
-      polylineRef.current = null;
-    }
-
-    // Add vehicles
-    const gVehicles = vehicles.map((v) => {
-      const marker = new google.maps.Marker({
-        position: { lat: v.lat, lng: v.lng },
-        map: gMap,
-        title: `${v.route_name} - Trip #${v.trip_id}`,
-        label: {
-          text: `R${v.route_id}`,
-          color: "#00201c",
-          fontWeight: "800",
-          fontSize: "10px",
-        },
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: "#14b8a6",
-          fillOpacity: 1,
-          strokeColor: "#060e20",
-          strokeWeight: 2.5,
-        },
-      });
-      return marker;
+    const map = new MapLibreMap({
+      container: containerRef.current,
+      style: CONFIG.mapStyleUrl,
+      center: [CONFIG.mapCenter.lng, CONFIG.mapCenter.lat],
+      zoom: 12.2,
+      pitch: liteMode ? 0 : 55,
+      bearing: liteMode ? 0 : -15,
+      attributionControl: { compact: true },
     });
-    vehicleMarkersRef.current = gVehicles;
 
-    // Add polyline if route stops provided
-    if (polylineStops.length >= 2) {
-      const path = polylineStops.map((s) => ({ lat: s.lat, lng: s.lng }));
-      const poly = new google.maps.Polyline({
-        path,
-        geodesic: true,
-        strokeColor: "#4fdbc8",
-        strokeOpacity: 0.9,
-        strokeWeight: 4.5,
-        map: gMap,
-      });
-      polylineRef.current = poly;
+    map.addControl(new NavigationControl({ visualizePitch: true }), "bottom-right");
 
-      const bounds = new google.maps.LatLngBounds();
-      path.forEach((pt) => bounds.extend(pt));
-      gMap.fitBounds(bounds, 36);
-    }
+    const overlay = new MapboxOverlay({
+      interleaved: false,
+      layers: [],
+    });
+    map.addControl(overlay as unknown as IControl);
+
+    map.on("load", () => {
+      try {
+        const style = map.getStyle();
+        const sources = style?.sources ?? {};
+        const vectorSourceKey = Object.keys(sources).find(
+          (k) => sources[k]?.type === "vector"
+        );
+        if (vectorSourceKey && !map.getLayer("transit-3d-buildings")) {
+          map.addLayer({
+            id: "transit-3d-buildings",
+            source: vectorSourceKey,
+            "source-layer": "building",
+            type: "fill-extrusion",
+            minzoom: 12,
+            paint: {
+              "fill-extrusion-color": "#1a243e",
+              "fill-extrusion-height": [
+                "coalesce",
+                ["get", "render_height"],
+                ["get", "height"],
+                14,
+              ],
+              "fill-extrusion-base": [
+                "coalesce",
+                ["get", "render_min_height"],
+                0,
+              ],
+              "fill-extrusion-opacity": 0.72,
+            },
+          });
+        }
+      } catch {
+        // Style may not include a building source-layer in offline/test envs
+      }
+    });
+
+    mapRef.current = map;
+    overlayRef.current = overlay;
 
     return () => {
-      vehicleMarkersRef.current.forEach((m) => m.setMap(null));
-      vehicleMarkersRef.current = [];
-      if (polylineRef.current) {
-        polylineRef.current.setMap(null);
-        polylineRef.current = null;
-      }
+      overlay.finalize();
+      map.remove();
+      mapRef.current = null;
+      overlayRef.current = null;
     };
-  }, [provider, gMap, vehicles, polylineStops]);
+  }, []);
+
+  // Toggle 3D pitch / buildings when liteMode changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const duration = prefersReducedMotion ? 0 : 700;
+    map.easeTo({
+      pitch: liteMode ? 0 : 55,
+      bearing: liteMode ? 0 : -15,
+      duration,
+    });
+
+    if (map.isStyleLoaded() && map.getLayer("transit-3d-buildings")) {
+      map.setLayoutProperty(
+        "transit-3d-buildings",
+        "visibility",
+        liteMode ? "none" : "visible"
+      );
+    }
+  }, [liteMode, prefersReducedMotion]);
+
+  // Smooth flyTo when focusStop or polylineStops changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const duration = prefersReducedMotion ? 0 : 1100;
+    if (focusStop) {
+      map.flyTo({
+        center: [focusStop.lng, focusStop.lat],
+        zoom: 14.5,
+        pitch: liteMode ? 0 : 55,
+        duration,
+      });
+      return;
+    }
+
+    if (polylineStops.length >= 2) {
+      const bounds = new LngLatBounds();
+      for (const s of polylineStops) bounds.extend([s.lng, s.lat]);
+      map.fitBounds(bounds, {
+        padding: 48,
+        pitch: liteMode ? 0 : 52,
+        duration,
+        maxZoom: 14,
+      });
+    }
+  }, [focusStop, polylineStops, liteMode, prefersReducedMotion]);
+
+  const hourFactor = HOURLY_PROFILE[selectedHour] ?? 1.0;
+
+  const layers = useMemo(() => {
+    const deckLayers = [];
+
+    // 1. Glowing Route Polyline
+    if (polylineStops.length >= 2) {
+      const pathData = [
+        {
+          name: "Selected Route",
+          path: polylineStops.map((s) => [s.lng, s.lat] as [number, number]),
+        },
+      ];
+      deckLayers.push(
+        new PathLayer({
+          id: "route-glow",
+          data: pathData,
+          getPath: (d) => d.path,
+          getColor: [20, 184, 166, 90],
+          widthMinPixels: 11,
+          capRounded: true,
+          jointRounded: true,
+        }),
+        new PathLayer({
+          id: "route-core",
+          data: pathData,
+          getPath: (d) => d.path,
+          getColor: [79, 219, 200, 245],
+          widthMinPixels: 4,
+          capRounded: true,
+          jointRounded: true,
+        })
+      );
+    }
+
+    // 2. Dispatch Optimizer Overlay Routes
+    if (dispatchRoutes.length > 0) {
+      const optPaths = dispatchRoutes
+        .filter((r) => r.stops.length >= 2)
+        .map((r, i) => ({
+          vehicle_id: r.vehicle_id,
+          color: DISPATCH_COLORS[i % DISPATCH_COLORS.length],
+          path: r.stops.map((s) => [s.lng, s.lat] as [number, number]),
+        }));
+      if (optPaths.length > 0) {
+        deckLayers.push(
+          new PathLayer({
+            id: "dispatch-routes",
+            data: optPaths,
+            getPath: (d) => d.path,
+            getColor: (d) => [...d.color, 215],
+            widthMinPixels: 3,
+            capRounded: true,
+            jointRounded: true,
+          })
+        );
+      }
+    }
+
+    // 3. Admin 3D Demand Columns (or flat circles in Lite mode)
+    if (stopDemands.length > 0) {
+      if (!liteMode) {
+        deckLayers.push(
+          new ColumnLayer<StopDemand>({
+            id: "demand-columns-3d",
+            data: stopDemands,
+            diskResolution: 12,
+            radius: 175,
+            extruded: true,
+            pickable: true,
+            elevationScale: 18,
+            getPosition: (d) => [d.lng, d.lat],
+            getElevation: (d) => d.avg_hourly_boardings * hourFactor,
+            getFillColor: (d) => {
+              const val = d.avg_hourly_boardings * hourFactor;
+              return val > 35
+                ? [255, 185, 95, 220]
+                : val > 18
+                ? [79, 219, 200, 210]
+                : [123, 208, 255, 190];
+            },
+            transitions: prefersReducedMotion ? undefined : { getElevation: 350 },
+            onHover: (info) => {
+              if (info.object) {
+                const est = Math.round(
+                  info.object.avg_hourly_boardings * hourFactor
+                );
+                setTooltip({
+                  x: info.x,
+                  y: info.y,
+                  title: info.object.stop_name,
+                  subtitle: `${selectedHour}:00 est. demand: ${est} pax/hr (Peak ${info.object.peak_hour}:00)`,
+                });
+              } else {
+                setTooltip(null);
+              }
+            },
+          })
+        );
+      } else {
+        deckLayers.push(
+          new ScatterplotLayer<StopDemand>({
+            id: "demand-circles-2d",
+            data: stopDemands,
+            pickable: true,
+            radiusMinPixels: 7,
+            radiusMaxPixels: 22,
+            getPosition: (d) => [d.lng, d.lat],
+            getRadius: (d) => 90 + d.avg_hourly_boardings * hourFactor * 5,
+            getFillColor: (d) => {
+              const val = d.avg_hourly_boardings * hourFactor;
+              return val > 35 ? [255, 185, 95, 180] : [79, 219, 200, 170];
+            },
+            onHover: (info) => {
+              if (info.object) {
+                const est = Math.round(
+                  info.object.avg_hourly_boardings * hourFactor
+                );
+                setTooltip({
+                  x: info.x,
+                  y: info.y,
+                  title: info.object.stop_name,
+                  subtitle: `${selectedHour}:00 est. demand: ${est} pax/hr`,
+                });
+              } else {
+                setTooltip(null);
+              }
+            },
+          })
+        );
+      }
+    }
+
+    // 4. Stop Markers
+    if (stops.length > 0) {
+      deckLayers.push(
+        new ScatterplotLayer<Stop>({
+          id: "stops-layer",
+          data: stops,
+          pickable: true,
+          stroked: true,
+          radiusMinPixels: 6,
+          radiusMaxPixels: 13,
+          lineWidthMinPixels: 2,
+          getPosition: (d) => [d.lng, d.lat],
+          getRadius: 110,
+          getFillColor: (d) =>
+            focusStop && focusStop.id === d.id
+              ? [255, 185, 95, 255]
+              : [6, 14, 32, 240],
+          getLineColor: [79, 219, 200, 255],
+          onClick: (info) => {
+            if (info.object && onSelectStop) onSelectStop(info.object);
+          },
+          onHover: (info) => {
+            if (info.object) {
+              setTooltip({
+                x: info.x,
+                y: info.y,
+                title: info.object.name,
+                subtitle: `Stop #${info.object.id}`,
+              });
+            } else if (stopDemands.length === 0) {
+              setTooltip(null);
+            }
+          },
+        })
+      );
+    }
+
+    // 5. Live Vehicles
+    if (vehicles.length > 0) {
+      deckLayers.push(
+        new ScatterplotLayer<Vehicle>({
+          id: "vehicles-layer",
+          data: vehicles,
+          pickable: true,
+          stroked: true,
+          radiusMinPixels: 11,
+          radiusMaxPixels: 18,
+          lineWidthMinPixels: 2,
+          getPosition: (d) => [d.lng, d.lat],
+          getRadius: 180,
+          getFillColor: [20, 184, 166, 245],
+          getLineColor: [6, 14, 32, 255],
+          transitions: prefersReducedMotion ? undefined : { getPosition: 600 },
+          onHover: (info) => {
+            if (info.object) {
+              const spd = info.object.speed_kmh
+                ? `${info.object.speed_kmh} km/h`
+                : "Active";
+              setTooltip({
+                x: info.x,
+                y: info.y,
+                title: `${info.object.route_name} (Trip #${info.object.trip_id})`,
+                subtitle: `${spd}${info.object.simulated ? " • Simulated" : ""}`,
+              });
+            } else {
+              setTooltip(null);
+            }
+          },
+        }),
+        new TextLayer<Vehicle>({
+          id: "vehicles-labels",
+          data: vehicles,
+          getPosition: (d) => [d.lng, d.lat],
+          getText: (d) => `R${d.route_id}`,
+          getSize: 11,
+          getColor: [0, 32, 28, 255],
+          getTextAnchor: "middle",
+          getAlignmentBaseline: "center",
+          fontWeight: "bold",
+          transitions: prefersReducedMotion ? undefined : { getPosition: 600 },
+        })
+      );
+    }
+
+    return deckLayers;
+  }, [
+    polylineStops,
+    dispatchRoutes,
+    stopDemands,
+    stops,
+    vehicles,
+    liteMode,
+    hourFactor,
+    selectedHour,
+    focusStop,
+    prefersReducedMotion,
+    onSelectStop,
+  ]);
+
+  useEffect(() => {
+    if (overlayRef.current) {
+      overlayRef.current.setProps({ layers });
+    }
+  }, [layers]);
 
   return (
-    <div className="relative w-full">
-      {/* Map Provider Selector Pill */}
-      {enableGoogleMapsToggle && (
-        <div className="absolute top-3 left-3 z-20 flex items-center bg-surface-container/90 backdrop-blur-md rounded-xl p-1 shadow-md border border-outline-variant/30 text-xs">
-          <button
-            type="button"
-            onClick={() => setProvider("google")}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition-all ${provider === "google"
-              ? "bg-primary text-on-primary shadow-sm"
-              : "text-on-surface-variant hover:text-on-surface"
-              }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">
-              map
-            </span>
-            <span>Google Maps</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setProvider("leaflet")}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-semibold transition-all ${provider === "leaflet"
-              ? "bg-primary text-on-primary shadow-sm"
-              : "text-on-surface-variant hover:text-on-surface"
-              }`}
-          >
-            <span className="material-symbols-outlined text-[15px]">
-              public
-            </span>
-            <span>OSM Tiles</span>
-          </button>
-        </div>
-      )}
+    <div
+      className={`relative w-full ${heightClass} rounded-2xl overflow-hidden bg-surface-container-lowest border border-outline-variant/30 shadow-xl`}
+    >
+      <div ref={containerRef} className="w-full h-full" />
 
-      {provider === "google" ? (
-        <GoogleMap
-          center={CONFIG.mapCenter}
-          zoom={12}
-          heightClass={heightClass}
-          onMapLoaded={(m) => setGMap(m)}
-          showMissingKeyHelp={true}
+      {/* 3D / 2D Lite Mode Toggle */}
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1 bg-surface-container/80 backdrop-blur-md rounded-xl p-1 border border-outline-variant/30 shadow-md text-xs">
+        <button
+          type="button"
+          onClick={() => setLiteMode(false)}
+          className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+            !liteMode
+              ? "bg-primary text-on-primary"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
         >
-          {(map) => (
-            <>
-              <MapControls
-                map={map}
-                onRecenter={() =>
-                  map?.panTo({
-                    lat: CONFIG.mapCenter.lat,
-                    lng: CONFIG.mapCenter.lng,
-                  })
-                }
-              />
-              <BusStopMarkers map={map} stops={stops} />
-            </>
-          )}
-        </GoogleMap>
-      ) : (
+          3D Map
+        </button>
+        <button
+          type="button"
+          onClick={() => setLiteMode(true)}
+          className={`px-2.5 py-1 rounded-lg font-semibold transition-colors ${
+            liteMode
+              ? "bg-primary text-on-primary"
+              : "text-on-surface-variant hover:text-on-surface"
+          }`}
+        >
+          2D Lite
+        </button>
+      </div>
+
+      {/* Hover Tooltip */}
+      {tooltip && (
         <div
-          ref={containerRef}
-          className={`w-full ${heightClass} rounded-2xl overflow-hidden bg-surface-container-lowest z-0 shadow-lg border border-outline-variant/20`}
-        />
+          className="pointer-events-none absolute z-30 px-3 py-2 rounded-xl bg-surface-container/95 backdrop-blur-md border border-primary/30 shadow-xl text-xs max-w-[230px]"
+          style={{
+            left: Math.min(tooltip.x + 12, 260),
+            top: Math.max(tooltip.y - 44, 12),
+          }}
+        >
+          <div className="font-semibold text-on-surface truncate">
+            {tooltip.title}
+          </div>
+          <div className="text-[11px] text-primary mt-0.5">
+            {tooltip.subtitle}
+          </div>
+        </div>
       )}
     </div>
   );
