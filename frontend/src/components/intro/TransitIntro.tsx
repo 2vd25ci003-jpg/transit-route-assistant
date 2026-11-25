@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { Component, type ReactNode, useCallback, useEffect, useState } from "react";
 import { useIntroSequence } from "@/hooks/useIntroSequence";
 import { IntroLoader } from "./IntroLoader";
 import { IntroLogo } from "./IntroLogo";
@@ -12,6 +12,26 @@ const BusScene = dynamic(
   () => import("./BusScene").then((mod) => mod.BusScene),
   { ssr: false }
 );
+
+class IntroErrorBoundary extends Component<
+  { children: ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 export function TransitIntro() {
   const {
@@ -32,6 +52,7 @@ export function TransitIntro() {
   } = useIntroSequence();
 
   const [exiting, setExiting] = useState(false);
+  const [sceneFailed, setSceneFailed] = useState(false);
 
   const handleEnter = useCallback(() => {
     setExiting(true);
@@ -45,10 +66,17 @@ export function TransitIntro() {
     setIsReadyForEntry(true);
   }, [setIsReadyForEntry]);
 
+  const handleSceneError = useCallback(() => {
+    setSceneFailed(true);
+    setScene(5);
+    setProgress(100);
+    setIsReadyForEntry(true);
+  }, [setScene, setProgress, setIsReadyForEntry]);
+
   // Immediate fallback progression if WebGL is unavailable or reduced motion is preferred
   useEffect(() => {
     if (!visible) return;
-    if (!webglSupported || reducedMotion) {
+    if (!webglSupported || reducedMotion || sceneFailed) {
       setScene(5);
       setProgress(100);
       setIsReadyForEntry(true);
@@ -57,6 +85,7 @@ export function TransitIntro() {
     visible,
     webglSupported,
     reducedMotion,
+    sceneFailed,
     setScene,
     setProgress,
     setIsReadyForEntry,
@@ -74,14 +103,16 @@ export function TransitIntro() {
       }`}
     >
       {/* 3D WebGL Canvas or Graceful Ricotta Cream Fallback */}
-      {webglSupported && !reducedMotion ? (
+      {webglSupported && !reducedMotion && !sceneFailed ? (
         <div className="absolute inset-0">
-          <BusScene
-            lowQuality={lowQuality}
-            onSceneChange={setScene}
-            onProgressChange={setProgress}
-            onReadyForEntry={handleReadyForEntry}
-          />
+          <IntroErrorBoundary onError={handleSceneError}>
+            <BusScene
+              lowQuality={lowQuality}
+              onSceneChange={setScene}
+              onProgressChange={setProgress}
+              onReadyForEntry={handleReadyForEntry}
+            />
+          </IntroErrorBoundary>
         </div>
       ) : (
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(0,49,83,0.12),#faf6ef_70%)]" />
