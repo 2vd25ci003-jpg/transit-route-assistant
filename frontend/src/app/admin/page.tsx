@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { KpiCard } from "@/components/KpiCard";
-import { TransitMap } from "@/components/TransitMap";
+import {
+  TransitMap,
+  type DispatchOverlayRoute,
+} from "@/components/TransitMap";
 import { api, getStoredAdminKey, setStoredAdminKey } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import type {
@@ -11,6 +14,7 @@ import type {
   BenchmarkResults,
   ForecastResponse,
   OptimizeResponse,
+  Stop,
   Vehicle,
 } from "@/lib/types";
 
@@ -22,7 +26,12 @@ export default function AdminDashboardPage() {
 
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [benchmarks, setBenchmarks] = useState<BenchmarkResults | null>(null);
+  const [experiment, setExperiment] = useState<
+    BenchmarkResults["bunching"] | null
+  >(null);
+  const [holdingWhatIf, setHoldingWhatIf] = useState<boolean>(true);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [stops, setStops] = useState<Stop[]>([]);
   const [forecast, setForecast] = useState<ForecastResponse | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<number>(1);
   const [fleetSize, setFleetSize] = useState<number>(2);
@@ -35,14 +44,18 @@ export default function AdminDashboardPage() {
     const activeKey = keyOverride ?? adminKey;
     if (!activeKey) return;
     try {
-      const [aData, vData, bData] = await Promise.all([
+      const [aData, vData, bData, eData, sData] = await Promise.all([
         api.getAdminAnalytics(activeKey),
         api.getVehicles(),
         api.getBenchmarkResults(activeKey).catch(() => null),
+        api.getBunchingExperiment(activeKey).catch(() => null),
+        api.getStops().catch(() => []),
       ]);
       setAnalytics(aData);
       setVehicles(vData);
       setBenchmarks(bData);
+      setExperiment(eData);
+      setStops(sData);
       if (aData.stop_demands.length > 0) {
         const firstId = aData.stop_demands[0].stop_id;
         setSelectedStopId((prev) => prev || firstId);
@@ -120,6 +133,47 @@ export default function AdminDashboardPage() {
       setOptLoading(false);
     }
   }
+
+  function handleExportCsv() {
+    if (!analytics) return;
+    const rows = [
+      ["type", "stop_id", "stop_name", "avg_hourly_or_predicted", "peak_hour_or_ts", "baseline_or_total"],
+      ...analytics.stop_demands.map((s) => [
+        "demand_summary",
+        String(s.stop_id),
+        `"${s.stop_name.replace(/"/g, '""')}"`,
+        String(s.avg_hourly_boardings),
+        `${s.peak_hour}:00`,
+        String(s.total_boardings),
+      ]),
+      ...(forecast?.predictions ?? []).map((p) => [
+        "forecast",
+        String(forecast?.stop_id ?? ""),
+        `"${(forecast?.stop_name ?? "").replace(/"/g, '""')}"`,
+        String(p.predicted_count),
+        p.ts,
+        String(p.baseline_count),
+      ]),
+    ];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "transit-demand-forecast.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const dispatchOverlayRoutes: DispatchOverlayRoute[] =
+    optResult && stops.length > 0
+      ? optResult.routes.map((r) => ({
+          vehicle_id: r.vehicle_id,
+          stops: r.stop_ids
+            .map((sid) => stops.find((s) => s.id === sid))
+            .filter((s): s is Stop => s !== undefined),
+        }))
+      : [];
 
   const maxHourlyVal = analytics
     ? Math.max(
@@ -282,6 +336,16 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={handleExportCsv}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high text-xs font-semibold"
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                download
+              </span>
+              <span>Export CSV</span>
+            </button>
+            <button
+              type="button"
               onClick={() => loadDashboard()}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary-container text-sm font-semibold hover:opacity-90"
             >
@@ -374,6 +438,7 @@ export default function AdminDashboardPage() {
               <TransitMap
                 stopDemands={analytics?.stop_demands ?? []}
                 vehicles={vehicles}
+                dispatchRoutes={dispatchOverlayRoutes}
                 selectedHour={selectedHour}
                 heightClass="h-[380px]"
               />
@@ -638,6 +703,132 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Holding What-If Toggle & Bunching Alert Feed */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Before / After Holding Headway Chart */}
+            <div className="bg-surface-container-low rounded-xl p-5 flex flex-col gap-4 border border-white/5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-base font-semibold text-on-surface">
+                    Holding Strategy What-If (Simulated)
+                  </h2>
+                  <p className="text-xs text-on-surface-variant">
+                    5-seed headway sample series before vs after holding
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHoldingWhatIf((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    holdingWhatIf
+                      ? "bg-primary text-on-primary"
+                      : "bg-tertiary text-on-tertiary"
+                  }`}
+                >
+                  Holding: {holdingWhatIf ? "ON" : "OFF"}
+                </button>
+              </div>
+
+              {experiment ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="bg-surface-container p-3 rounded-lg">
+                      <div className="text-on-surface-variant">
+                        Without Holding (StdDev / Bunching)
+                      </div>
+                      <div className="text-base font-bold text-tertiary font-mono mt-1">
+                        {experiment.without_holding.headway_std_min}m /{" "}
+                        {experiment.without_holding.bunching_count}
+                      </div>
+                    </div>
+                    <div className="bg-surface-container p-3 rounded-lg">
+                      <div className="text-on-surface-variant">
+                        With Holding (StdDev / Bunching)
+                      </div>
+                      <div className="text-base font-bold text-primary font-mono mt-1">
+                        {experiment.with_holding.headway_std_min}m /{" "}
+                        {experiment.with_holding.bunching_count}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-surface-container-lowest rounded-xl p-4 flex items-end gap-1.5 h-36 overflow-x-auto">
+                    {(holdingWhatIf
+                      ? experiment.with_holding.sample_series
+                      : experiment.without_holding.sample_series
+                    ).map((val, idx) => {
+                      const h = Math.max(
+                        6,
+                        Math.min(110, Math.round((Math.max(0, val) / 20) * 110))
+                      );
+                      const isBunched = val < 4;
+                      return (
+                        <div
+                          key={`hw-${idx}`}
+                          title={`Sample #${idx + 1}: ${val} min`}
+                          className={`flex-1 min-w-[8px] rounded-t ${
+                            isBunched ? "bg-tertiary" : "bg-primary"
+                          }`}
+                          style={{ height: `${h}px` }}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-on-surface-variant">
+                  Loading holding simulation data...
+                </p>
+              )}
+            </div>
+
+            {/* Bunching Alert Feed */}
+            <div className="bg-surface-container-low rounded-xl p-5 flex flex-col gap-3 border border-white/5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-on-surface">
+                  Bunching Alert Feed
+                </h2>
+                <span className="text-xs font-mono text-tertiary">
+                  {analytics?.bunching_alerts ?? 0} total events
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2.5 max-h-60 overflow-y-auto">
+                {(analytics?.route_headways ?? [])
+                  .filter((rh) => rh.bunching_events > 0 || rh.headway_std_min > 2.5)
+                  .map((rh) => (
+                    <div
+                      key={`alert-${rh.route_id}`}
+                      className="p-3 rounded-xl bg-surface-container border border-tertiary/25 flex items-start justify-between gap-3 text-xs"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold text-on-surface">
+                          {rh.route_name}
+                        </span>
+                        <span className="text-on-surface-variant">
+                          {rh.bunching_events} bunching events (&lt;4m gap) •
+                          StdDev {rh.headway_std_min}m
+                        </span>
+                        <span className="text-primary font-semibold">
+                          Recommendation: Enable 90s–120s stop holding
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-tertiary/20 text-tertiary font-bold shrink-0">
+                        Alert
+                      </span>
+                    </div>
+                  ))}
+                {(analytics?.route_headways ?? []).every(
+                  (rh) => rh.bunching_events === 0 && rh.headway_std_min <= 2.5
+                ) && (
+                  <div className="p-4 rounded-xl bg-surface-container text-xs text-on-surface-variant">
+                    No active bunching alerts across monitored routes.
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 

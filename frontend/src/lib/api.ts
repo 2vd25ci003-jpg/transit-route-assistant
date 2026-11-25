@@ -100,4 +100,11 @@ export const api = {
     apiFetch<BenchmarkResults>("/admin/results", {
       headers: { "X-Admin-Key": adminKey ?? getStoredAdminKey() },
     }),
+
+  getBunchingExperiment: (
+    adminKey?: string
+  ): Promise<BenchmarkResults["bunching"]> =>
+    apiFetch<BenchmarkResults["bunching"]>("/admin/bunching-experiment", {
+      headers: { "X-Admin-Key": adminKey ?? getStoredAdminKey() },
+    }),
 };

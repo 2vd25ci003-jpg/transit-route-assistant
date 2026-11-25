@@ -1,54 +1,45 @@
-# Local Public Transportation Information & Route-Assistance System (TransitAI)
+# TransitAI – Local Public Transportation Information & Route-Assistance System
 
-KLS VDIT, CSE (AI&ML) community project — a full-stack transit assistant for **Hubli-Dharwad** featuring Google Maps Platform integration, live vehicle tracking, stop ETAs, route search (direct & 1-transfer), ML demand forecasting, OR-Tools fleet dispatch optimization, and an operator analytics dashboard.
+KLS VDIT, CSE (AI&ML) community project — a full-stack transit assistant for **Hubli-Dharwad** featuring a 3D MapLibre GL JS + deck.gl map, in-process physics simulator with holding strategy, bidirectional & circular route search, ML demand forecasting, OR-Tools fleet dispatch optimization, and an authenticated operator analytics dashboard.
 
 ## Architecture
 
 ```
-Frontend (Next.js + Tailwind + Google Maps Platform / Leaflet fallback)
-        │
+Frontend (Next.js 15 + Tailwind v4 + Framer Motion + MapLibre GL JS + deck.gl)
+        │  (PWA, English/Kannada i18n, 3D Glassmorphism)
         ▼
-Backend (FastAPI + SQLAlchemy + SQLite/PostgreSQL)
-  ├── /stops, /stops/nearby, /stops/{id}/eta
-  ├── /routes, /routes/{id}, /routes/search
-  ├── /vehicles
-  ├── /forecast        (scikit-learn Random Forest)
-  ├── /optimize        (Google OR-Tools mTSP + Nearest-Neighbor baseline)
-  └── /admin/analytics (Demand heatmap, headway variance, bunching alerts)
+Backend (FastAPI + SQLAlchemy + SQLite / PostgreSQL)
+  ├── /stops, /stops/nearby, /stops/{id}/eta   (distance/speed/dwell ETA)
+  ├── /routes, /routes/{id}, /routes/search     (in-memory graph, 0/1/2 transfers)
+  ├── /vehicles                                 (live in-process physics simulator)
+  ├── /forecast                                 (scikit-learn Random Forest, auto-trained)
+  ├── /optimize                                 (Google OR-Tools mTSP + NN baseline)
+  └── /admin/* (X-Admin-Key)                    (analytics, bunching experiment, benchmarks)
 ```
 
-## Google Maps Platform Integration
-
-TransitAI includes official Google Maps Platform integration using `@googlemaps/js-api-loader` and custom dark styling matching the TransitAI design tokens.
-
-### Required Google Cloud APIs
-Enable the following 4 APIs in your [Google Cloud Console](https://console.cloud.google.com/google/maps-apis/overview):
-1. **Maps JavaScript API** — Interactive vector map, zoom controls, and custom markers.
-2. **Places API** — Autocomplete location search for transit hubs, bus stands, and railway stations.
-3. **Routes API (or Directions API)** — Routing, travel distances, durations, and alternative paths.
-4. **Geocoding API** — Reverse & forward coordinate translation.
-
-### API Key Security & Restrictions
-- **Application Restriction**: Restrict key to **Websites (HTTP referrers)**:
-  - `http://localhost:3000/*`
-  - `https://your-production-domain.com/*`
-- **API Restriction**: Restrict the key specifically to the 4 enabled APIs above.
-- In `frontend/.env.local`:
-  ```env
-  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
-  VITE_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
-  ```
-
-*Note: If no API key is configured, TransitAI gracefully falls back to OpenStreetMap dark tiles with full interactive stop/vehicle functionality, ensuring zero downtime.*
+## Vector Map Tiles (No API Key Required)
+TransitAI uses **OpenFreeMap** (`https://tiles.openfreemap.org/styles/dark`) with MapLibre GL JS + deck.gl:
+- Free & open-source OpenStreetMap vector tiles with 3D building extrusions
+- No API key, registration, or hard request limits (provided as-is; commercial use allowed)
+- Includes a **2D Lite** toggle and automatic `prefers-reduced-motion` support
 
 ## Quick Start
 
-### 1. Backend Setup
+### Option A: Docker Compose (PostgreSQL + FastAPI Backend)
+```powershell
+cp .env.example .env
+docker compose up --build
+```
+
+### Option B: Local Development
+
+#### 1. Backend
 ```powershell
 cd backend
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
 Generate 60 days of synthetic Hubli-Dharwad transit data (15 stops, 3 routes):
@@ -56,14 +47,14 @@ Generate 60 days of synthetic Hubli-Dharwad transit data (15 stops, 3 routes):
 python ..\data\generate.py
 ```
 
-Train the Random Forest demand forecast model:
+Train the Random Forest model (also runs automatically at startup if missing):
 ```powershell
 python ..\ml\train_forecast.py
 ```
 
-Run the vehicle simulator (creates live/recent trips with configurable bunching):
+Run the benchmark suite (writes `ml/results.md` and `ml/results.json`):
 ```powershell
-python -m simulator --batch --bunching
+python ..\scripts\benchmark.py
 ```
 
 Start the FastAPI server:
@@ -73,24 +64,23 @@ uvicorn app.main:app --reload --port 8000
 
 Run backend tests:
 ```powershell
-python -m pytest tests\ -v
+python -m pytest tests\ -q
 ```
 
-### 2. Frontend Setup
+#### 2. Frontend
 ```powershell
 cd frontend
 cp .env.example .env.local
-# Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local
 npm install
 npm run dev
 ```
 
 Open:
 - Passenger Home & Search: `http://localhost:3000/`
-- Google Maps Transit Explorer: `http://localhost:3000/map`
-- Route Results & Map: `http://localhost:3000/routes`
-- Live Fleet Radar: `http://localhost:3000/live`
-- Operator Admin Dashboard: `http://localhost:3000/admin`
+- Route Results & Stop Timeline: `http://localhost:3000/routes`
+- 3D Transit Explorer: `http://localhost:3000/map`
+- Live Fleet Radar (Simulated): `http://localhost:3000/live`
+- Operator Admin Dashboard: `http://localhost:3000/admin` (Default key: `transit-admin-dev-key`)
 
 Run frontend build & tests:
 ```powershell
@@ -98,16 +88,21 @@ npm run build
 npm test
 ```
 
-## ML Forecast Evaluation (`ml/results.md`)
+## Real Benchmark Results (`ml/results.md`)
+All metrics below were measured on synthetic Hubli-Dharwad data (`data/generate.py`) and simulated bus runs:
 
-- **Model**: `RandomForestRegressor(n_estimators=120, max_depth=12, min_samples_leaf=3, random_state=42)`
-- **Baseline**: Naive previous-week same-hour same-stop boarding count (`lag_7d`)
-- **Chronological Split**: Train 8,880 rows / Val 1,920 rows / Test 1,920 rows
-- **Test MAE**: `6.44` vs Baseline `7.54` (`+14.6%` improvement)
-- **Test RMSE**: `9.96` vs Baseline `11.68` (`+14.7%` improvement)
+- **Demand Forecast (Random Forest vs Previous-Week Baseline)**:
+  - Random Forest Test MAE `6.44` / RMSE `9.96` vs Baseline MAE `7.54` / RMSE `11.68` (`+14.6%` MAE, `+14.7%` RMSE)
+- **Fleet Dispatch Optimizer (OR-Tools vs Nearest-Neighbor, 15 stops)**:
+  - 2 buses: `69.824 km` vs `73.708 km` (`+5.27%`)
+  - 3 buses: `69.824 km` vs `105.007 km` (`+33.51%`)
+  - 4 buses: `69.824 km` vs `137.219 km` (`+49.11%`)
+- **Holding Strategy (Simulated, 5 seeds `[42, 43, 44, 45, 46]`)**:
+  - Without Holding: Mean `6.7 min`, StdDev `5.86 min`, Bunching Events `35`
+  - With Holding: Mean `6.38 min`, StdDev `4.8 min`, Bunching Events `31` (`18.1%` StdDev reduction)
+- **`/routes/search` Latency (60 stop-pair queries)**:
+  - p50: `2.46 ms`, p95: `2.86 ms`, max: `4.72 ms` (`< 1000 ms` PASS)
 
-## Future Scope (Out of MVP)
-- Real Cloud-Fog-Edge deployment & V2I/V2V hardware
-- Federated learning across transit depots
-- Biometric / RFID fare collection & smart passes
-- Native mobile apps
+## Deployment
+- **Backend (Render / Railway)**: Use `backend/Dockerfile` (`PORT` env var supported). Set `DATABASE_URL`, `CORS_ORIGINS`, and `ADMIN_API_KEY`.
+- **Frontend (Vercel)**: Root directory `frontend/` with `frontend/vercel.json`. Set `NEXT_PUBLIC_API_URL` to your deployed backend URL.
