@@ -9,3 +9,4 @@ pytest>=8.0,<9
 scikit-learn>=1.5,<2
 joblib>=1.4,<2
 ortools>=9.11,<10
+psycopg2-binary>=2.9,<3

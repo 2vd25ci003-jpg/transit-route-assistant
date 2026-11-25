@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 import pytest
 
+from app.config import ADMIN_API_KEY
 from app.database import Base
 from app.models import Boarding, Route, RouteStop, Stop
 from app.services.simulator import (
@@ -97,7 +98,10 @@ def test_holding_strategy_reduces_headway_variance(sim_db):
 
 def test_admin_bunching_experiment_endpoint(client):
     """GET /admin/bunching-experiment returns 5-seed simulated results."""
-    resp = client.get("/admin/bunching-experiment")
+    resp = client.get(
+        "/admin/bunching-experiment",
+        headers={"X-Admin-Key": ADMIN_API_KEY},
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["simulated"] is True

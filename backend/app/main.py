@@ -1,6 +1,8 @@
 """Transit Route Assistant – FastAPI application."""
 
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
@@ -8,16 +10,33 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.config import CORS_ORIGINS
 from app.database import Base, SessionLocal, engine
 from app.services.simulator import realtime_simulator
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Create tables on startup and run the in-process real-time simulator."""
+    """Create tables, auto-train missing forecast model, and run real-time simulator."""
     import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+
+    # Auto-train forecast model if missing and boardings exist
+    project_root = Path(__file__).resolve().parent.parent.parent
+    model_path = project_root / "ml" / "models" / "forecast_rf.joblib"
+    if not model_path.exists():
+        db = SessionLocal()
+        try:
+            if db.query(app.models.Boarding).first() is not None:
+                if str(project_root) not in sys.path:
+                    sys.path.insert(0, str(project_root))
+                from ml.train_forecast import train_and_evaluate
+
+                train_and_evaluate()
+        finally:
+            db.close()
+
     await realtime_simulator.start_loop(SessionLocal)
     try:
         yield
@@ -33,7 +52,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

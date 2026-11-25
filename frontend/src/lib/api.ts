@@ -13,6 +13,20 @@ import type {
   Vehicle,
 } from "./types";
 
+export function getStoredAdminKey(): string {
+  if (typeof window === "undefined") return "";
+  return window.sessionStorage.getItem("transit_admin_key") ?? "";
+}
+
+export function setStoredAdminKey(key: string): void {
+  if (typeof window === "undefined") return;
+  if (key) {
+    window.sessionStorage.setItem("transit_admin_key", key);
+  } else {
+    window.sessionStorage.removeItem("transit_admin_key");
+  }
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${CONFIG.apiUrl}${path}`, {
     ...init,
@@ -77,9 +91,13 @@ export const api = {
       }),
     }),
 
-  getAdminAnalytics: (): Promise<AdminAnalytics> =>
-    apiFetch<AdminAnalytics>("/admin/analytics"),
+  getAdminAnalytics: (adminKey?: string): Promise<AdminAnalytics> =>
+    apiFetch<AdminAnalytics>("/admin/analytics", {
+      headers: { "X-Admin-Key": adminKey ?? getStoredAdminKey() },
+    }),
 
-  getBenchmarkResults: (): Promise<BenchmarkResults> =>
-    apiFetch<BenchmarkResults>("/admin/results"),
+  getBenchmarkResults: (adminKey?: string): Promise<BenchmarkResults> =>
+    apiFetch<BenchmarkResults>("/admin/results", {
+      headers: { "X-Admin-Key": adminKey ?? getStoredAdminKey() },
+    }),
 };

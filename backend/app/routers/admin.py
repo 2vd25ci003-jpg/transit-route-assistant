@@ -1,4 +1,4 @@
-"""Admin analytics router – demand heatmap, headway variance, and forecast vs actual."""
+"""Admin analytics router – protected by X-Admin-Key, using grouped SQL queries."""
 
 from __future__ import annotations
 
@@ -8,10 +8,11 @@ from datetime import timedelta
 from pathlib import Path
 
 import numpy as np
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy import extract, func
 from sqlalchemy.orm import Session
 
+from app.config import ADMIN_API_KEY
 from app.database import get_db
 from app.models import Boarding, Route, Stop, Trip, VehiclePosition
 from app.routers.forecast import _get_model
@@ -24,10 +25,27 @@ from app.schemas import (
 )
 from app.services.simulator import (
     load_route_geometries,
+    realtime_simulator,
     run_bunching_experiment,
 )
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+
+def verify_admin_key(
+    x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+) -> str:
+    """Validate the X-Admin-Key header against ADMIN_API_KEY."""
+    if not x_admin_key:
+        raise HTTPException(status_code=401, detail="Missing X-Admin-Key header")
+    if x_admin_key != ADMIN_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid admin API key")
+    return x_admin_key
+
+
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    dependencies=[Depends(verify_admin_key)],
+)
 
 _TARGET_HEADWAY_MIN = 10.0
 _BUNCHING_THRESHOLD_MIN = 4.0
@@ -35,54 +53,68 @@ _BUNCHING_THRESHOLD_MIN = 4.0
 
 @router.get("/analytics", response_model=AdminAnalyticsOut)
 def get_admin_analytics(db: Session = Depends(get_db)) -> AdminAnalyticsOut:
-    """Aggregate live fleet, headway variance, stop demand, and hourly series."""
+    """Aggregate live fleet, headway variance, stop demand, and hourly series via grouped SQL."""
     total_stops = db.query(func.count(Stop.id)).scalar() or 0
     total_routes = db.query(func.count(Route.id)).scalar() or 0
 
-    # Active vehicles in the 5-min window ending at latest VP timestamp
-    latest_vp_ts = db.query(func.max(VehiclePosition.ts)).scalar()
-    active_vehicles = 0
-    if latest_vp_ts is not None:
-        window_start = latest_vp_ts - timedelta(minutes=5)
-        active_vehicles = (
-            db.query(func.count(func.distinct(VehiclePosition.trip_id)))
-            .filter(
-                VehiclePosition.ts >= window_start,
-                VehiclePosition.ts <= latest_vp_ts,
-            )
-            .scalar()
-            or 0
-        )
+    # Active vehicles: live simulator if active, otherwise 5-min DB window
+    if realtime_simulator.engine is not None:
+        active_vehicles = len(realtime_simulator.engine.get_active_vehicles())
+    else:
+        active_vehicles = 0
 
-    # Stop demand heatmap
+    if active_vehicles == 0:
+        latest_vp_ts = db.query(func.max(VehiclePosition.ts)).scalar()
+        if latest_vp_ts is not None:
+            window_start = latest_vp_ts - timedelta(minutes=5)
+            active_vehicles = (
+                db.query(func.count(func.distinct(VehiclePosition.trip_id)))
+                .filter(
+                    VehiclePosition.ts >= window_start,
+                    VehiclePosition.ts <= latest_vp_ts,
+                )
+                .scalar()
+                or 0
+            )
+
+    # Grouped SQL: per-stop average and total boardings (eliminates N+1 per-stop queries)
+    stop_totals = {
+        row.stop_id: (float(row.avg_cnt), int(row.sum_cnt))
+        for row in db.query(
+            Boarding.stop_id,
+            func.avg(Boarding.count).label("avg_cnt"),
+            func.sum(Boarding.count).label("sum_cnt"),
+        )
+        .group_by(Boarding.stop_id)
+        .all()
+    }
+
+    # Grouped SQL: per-(stop_id, hour) average boardings for peak hour & hourly series
+    hour_expr = extract("hour", Boarding.ts)
+    stop_hour_rows = (
+        db.query(
+            Boarding.stop_id,
+            hour_expr.label("hr"),
+            func.avg(Boarding.count).label("avg_cnt"),
+        )
+        .group_by(Boarding.stop_id, hour_expr)
+        .all()
+    )
+    peak_hour_by_stop: dict[int, tuple[int, float]] = {}
+    by_hour_all: dict[int, list[float]] = {}
+    for row in stop_hour_rows:
+        hr = int(row.hr)
+        avg_val = float(row.avg_cnt)
+        by_hour_all.setdefault(hr, []).append(avg_val)
+        prev = peak_hour_by_stop.get(row.stop_id)
+        if prev is None or avg_val > prev[1]:
+            peak_hour_by_stop[row.stop_id] = (hr, avg_val)
+
     stops = db.query(Stop).order_by(Stop.id).all()
     stop_demands: list[StopDemandOut] = []
     for s in stops:
-        b_rows = (
-            db.query(Boarding.ts, Boarding.count)
-            .filter(Boarding.stop_id == s.id)
-            .all()
-        )
-        if not b_rows:
-            stop_demands.append(
-                StopDemandOut(
-                    stop_id=s.id,
-                    stop_name=s.name,
-                    lat=s.lat,
-                    lng=s.lng,
-                    avg_hourly_boardings=0.0,
-                    peak_hour=8,
-                    total_boardings=0,
-                )
-            )
-            continue
-
-        total_b = sum(r.count for r in b_rows)
-        avg_b = total_b / len(b_rows)
-        by_hour: dict[int, list[int]] = {}
-        for r in b_rows:
-            by_hour.setdefault(r.ts.hour, []).append(r.count)
-        peak_h = max(by_hour.keys(), key=lambda h: sum(by_hour[h]) / len(by_hour[h]))
+        avg_b, total_b = stop_totals.get(s.id, (0.0, 0))
+        peak_h = peak_hour_by_stop.get(s.id, (8, 0.0))[0]
         stop_demands.append(
             StopDemandOut(
                 stop_id=s.id,
@@ -95,56 +127,59 @@ def get_admin_analytics(db: Session = Depends(get_db)) -> AdminAnalyticsOut:
             )
         )
 
-    # Headway variance per route (from recent trips' stop-arrival timestamps)
+    # Batched query for recent trips & their VP timestamps
     routes = db.query(Route).order_by(Route.id).all()
-    route_headways: list[RouteHeadwayOut] = []
-    all_headways: list[float] = []
-    total_bunching_alerts = 0
-
+    recent_trips_by_route: dict[int, list[Trip]] = {}
     for r in routes:
-        recent_trips = (
+        trips = (
             db.query(Trip)
             .filter(Trip.route_id == r.id)
             .order_by(Trip.start_time.desc())
             .limit(12)
             .all()
         )
-        recent_trips.reverse()  # chronological
+        trips.reverse()
+        recent_trips_by_route[r.id] = trips
 
-        trip_times: list[list] = []
-        for t in recent_trips:
-            vps = (
-                db.query(VehiclePosition.ts)
-                .filter(VehiclePosition.trip_id == t.id)
-                .order_by(VehiclePosition.ts)
-                .all()
-            )
-            if vps:
-                trip_times.append([v[0] for v in vps])
+    all_trip_ids = [
+        t.id for trips in recent_trips_by_route.values() for t in trips
+    ]
+    vps_by_trip: dict[int, list] = {}
+    if all_trip_ids:
+        vp_rows = (
+            db.query(VehiclePosition.trip_id, VehiclePosition.ts)
+            .filter(VehiclePosition.trip_id.in_(all_trip_ids))
+            .order_by(VehiclePosition.trip_id, VehiclePosition.ts)
+            .all()
+        )
+        for tid, ts in vp_rows:
+            vps_by_trip.setdefault(tid, []).append(ts)
 
+    route_headways: list[RouteHeadwayOut] = []
+    all_headways: list[float] = []
+    total_bunching_alerts = 0
+
+    for r in routes:
+        trip_times = [
+            vps_by_trip[t.id]
+            for t in recent_trips_by_route.get(r.id, [])
+            if t.id in vps_by_trip
+        ]
         headways: list[float] = []
         bunching_count = 0
         for idx in range(len(trip_times) - 1):
-            t_a = trip_times[idx]
-            t_b = trip_times[idx + 1]
-            # Only compare trips from the same day/session (start gap < 60 min)
+            t_a, t_b = trip_times[idx], trip_times[idx + 1]
             start_gap = (t_b[0] - t_a[0]).total_seconds() / 60.0
             if 0 < start_gap < 60.0:
-                n = min(len(t_a), len(t_b))
-                for stop_i in range(n):
+                for stop_i in range(min(len(t_a), len(t_b))):
                     hw = (t_b[stop_i] - t_a[stop_i]).total_seconds() / 60.0
                     headways.append(hw)
                     if hw < _BUNCHING_THRESHOLD_MIN:
                         bunching_count += 1
 
-        if headways:
-            avg_hw = statistics.mean(headways)
-            std_hw = statistics.stdev(headways) if len(headways) > 1 else 0.0
-            all_headways.extend(headways)
-        else:
-            avg_hw = _TARGET_HEADWAY_MIN
-            std_hw = 0.0
-
+        avg_hw = statistics.mean(headways) if headways else _TARGET_HEADWAY_MIN
+        std_hw = statistics.stdev(headways) if len(headways) > 1 else 0.0
+        all_headways.extend(headways)
         total_bunching_alerts += bunching_count
         status = "bunching" if bunching_count > 0 or std_hw > 2.5 else "nominal"
         route_headways.append(
@@ -159,30 +194,17 @@ def get_admin_analytics(db: Session = Depends(get_db)) -> AdminAnalyticsOut:
             )
         )
 
-    # Hourly demand series: actual average vs RF model prediction across stops
+    # Hourly demand series from grouped SQL averages
     hourly_demand_series: list[HourlyDemandPoint] = []
-    all_boardings = db.query(Boarding.stop_id, Boarding.ts, Boarding.count).all()
-    by_hour_all: dict[int, list[int]] = {}
-    for b in all_boardings:
-        by_hour_all.setdefault(b.ts.hour, []).append(b.count)
-
     model = _get_model()
     for h in sorted(by_hour_all.keys()):
         actual_avg = float(np.mean(by_hour_all[h]))
         if model is not None and stops:
-            # Predict for a representative weekday using actual_avg as lag_7d proxy
-            preds = [
-                max(
-                    0.0,
-                    float(
-                        model.predict(
-                            np.array([[float(s.id), float(h), 2.0, 0.0, actual_avg]])
-                        )[0]
-                    ),
-                )
-                for s in stops
-            ]
-            forecast_avg = float(np.mean(preds))
+            features = np.array(
+                [[float(s.id), float(h), 2.0, 0.0, actual_avg] for s in stops],
+                dtype=float,
+            )
+            forecast_avg = float(np.mean(np.maximum(0.0, model.predict(features))))
         else:
             forecast_avg = actual_avg
 

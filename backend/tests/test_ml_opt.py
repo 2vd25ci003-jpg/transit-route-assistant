@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 
+from app.config import ADMIN_API_KEY
 from app.models import Boarding
 from sqlalchemy.orm import sessionmaker
 
@@ -83,8 +84,18 @@ def test_optimize_stop_not_found(client):
     assert "error" in resp.json()
 
 
+def test_admin_analytics_requires_api_key(client):
+    assert client.get("/admin/analytics").status_code == 401
+    assert (
+        client.get("/admin/analytics", headers={"X-Admin-Key": "wrong"}).status_code
+        == 403
+    )
+
+
 def test_admin_analytics_returns_summary(client):
-    resp = client.get("/admin/analytics")
+    resp = client.get(
+        "/admin/analytics", headers={"X-Admin-Key": ADMIN_API_KEY}
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["total_stops"] == 4
@@ -95,7 +106,9 @@ def test_admin_analytics_returns_summary(client):
 
 
 def test_admin_results_returns_benchmarks(client):
-    resp = client.get("/admin/results")
+    resp = client.get(
+        "/admin/results", headers={"X-Admin-Key": ADMIN_API_KEY}
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert "forecast" in data

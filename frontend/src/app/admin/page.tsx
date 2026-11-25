@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { KpiCard } from "@/components/KpiCard";
 import { TransitMap } from "@/components/TransitMap";
-import { api } from "@/lib/api";
+import { api, getStoredAdminKey, setStoredAdminKey } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import type {
   AdminAnalytics,
@@ -15,6 +15,11 @@ import type {
 } from "@/lib/types";
 
 export default function AdminDashboardPage() {
+  const [adminKey, setAdminKey] = useState<string>("");
+  const [keyInput, setKeyInput] = useState<string>("");
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [benchmarks, setBenchmarks] = useState<BenchmarkResults | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -25,12 +30,14 @@ export default function AdminDashboardPage() {
   const [optLoading, setOptLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadDashboard() {
+  async function loadDashboard(keyOverride?: string) {
+    const activeKey = keyOverride ?? adminKey;
+    if (!activeKey) return;
     try {
       const [aData, vData, bData] = await Promise.all([
-        api.getAdminAnalytics(),
+        api.getAdminAnalytics(activeKey),
         api.getVehicles(),
-        api.getBenchmarkResults().catch(() => null),
+        api.getBenchmarkResults(activeKey).catch(() => null),
       ]);
       setAnalytics(aData);
       setVehicles(vData);
@@ -39,17 +46,55 @@ export default function AdminDashboardPage() {
         const firstId = aData.stop_demands[0].stop_id;
         setSelectedStopId((prev) => prev || firstId);
       }
+      setAuthenticated(true);
+      setAuthError(null);
       setError(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load admin analytics"
-      );
+      const msg =
+        err instanceof Error ? err.message : "Failed to load admin analytics";
+      if (
+        msg.toLowerCase().includes("admin") ||
+        msg.toLowerCase().includes("key") ||
+        msg.includes("401") ||
+        msg.includes("403")
+      ) {
+        setAuthenticated(false);
+        setStoredAdminKey("");
+        setAuthError(msg);
+      } else {
+        setError(msg);
+      }
     }
   }
 
   useEffect(() => {
-    loadDashboard();
+    const saved = getStoredAdminKey();
+    if (saved) {
+      setAdminKey(saved);
+      loadDashboard(saved);
+    }
   }, []);
+
+  function handleAdminLogin(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = keyInput.trim();
+    if (!trimmed) {
+      setAuthError("Please enter the Admin API key.");
+      return;
+    }
+    setStoredAdminKey(trimmed);
+    setAdminKey(trimmed);
+    loadDashboard(trimmed);
+  }
+
+  function handleAdminLogout() {
+    setStoredAdminKey("");
+    setAdminKey("");
+    setKeyInput("");
+    setAuthenticated(false);
+    setAnalytics(null);
+    setBenchmarks(null);
+  }
 
   useEffect(() => {
     if (!selectedStopId) return;
@@ -84,6 +129,67 @@ export default function AdminDashboardPage() {
         ])
       )
     : 50;
+
+  if (!authenticated) {
+    return (
+      <div className="min-h-screen bg-surface text-on-surface flex items-center justify-center p-6">
+        <form
+          onSubmit={handleAdminLogin}
+          className="w-full max-w-md bg-surface-container-low border border-outline-variant/30 rounded-2xl p-6 shadow-2xl flex flex-col gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-container text-on-primary-container flex items-center justify-center">
+              <span className="material-symbols-outlined text-[22px]">
+                lock
+              </span>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-on-surface">
+                Operator Admin Login
+              </h1>
+              <p className="text-xs text-on-surface-variant">
+                Enter your <code>X-Admin-Key</code> to access fleet telemetry
+              </p>
+            </div>
+          </div>
+
+          {authError && (
+            <div className="p-3 rounded-xl bg-error-container text-on-error-container text-xs">
+              {authError}
+            </div>
+          )}
+
+          <label className="flex flex-col gap-1.5 text-xs">
+            <span className="text-on-surface-variant font-semibold">
+              Admin API Key
+            </span>
+            <input
+              type="password"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              placeholder="transit-admin-dev-key"
+              className="h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-on-surface focus:outline-none focus:border-primary"
+            />
+          </label>
+
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <Link
+              href="/"
+              className="text-xs text-on-surface-variant hover:text-on-surface"
+            >
+              ← Back to Passenger View
+            </Link>
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-xl bg-primary-container text-on-primary-container text-sm font-semibold hover:opacity-90"
+            >
+              Sign In
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex">
@@ -172,16 +278,25 @@ export default function AdminDashboardPage() {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={loadDashboard}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary-container text-sm font-semibold hover:opacity-90"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              autorenew
-            </span>
-            <span>Refresh</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => loadDashboard()}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary-container text-sm font-semibold hover:opacity-90"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                autorenew
+              </span>
+              <span>Refresh</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleAdminLogout}
+              className="px-3 py-2 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface text-xs font-semibold"
+            >
+              Sign Out
+            </button>
+          </div>
         </header>
 
         <main className="p-6 flex flex-col gap-6 max-w-7xl mx-auto">
