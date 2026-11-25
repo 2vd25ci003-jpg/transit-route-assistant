@@ -2,30 +2,30 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 @theme {
-  /* Swapped: Sugar Violet base/background, Vanilla Cream cards & containers, Cherry Red accents */
+  /* Sugar Violet base/background, White cards & containers, Cherry Red accents */
   --color-surface: #ede0ff;
   --color-surface-dim: #e2cdfc;
   --color-surface-container-lowest: #f5ecff;
-  --color-surface-container-low: #fdf6e9;
-  --color-surface-container: #f9ebd2;
-  --color-surface-container-high: #f2dec0;
-  --color-surface-container-highest: #ead3af;
-  --color-surface-bright: #e0c193;
+  --color-surface-container-low: #ffffff;
+  --color-surface-container: #ffffff;
+  --color-surface-container-high: #f8fafc;
+  --color-surface-container-highest: #e2e8f0;
+  --color-surface-bright: #cbd5e1;
   --color-surface-tint: #5b21b6;
 
   --color-primary: #5b21b6;
-  --color-primary-container: #f5e1be;
-  --color-primary-fixed: #fdf6e9;
-  --color-on-primary: #fdf6e9;
+  --color-primary-container: #ffffff;
+  --color-primary-fixed: #ffffff;
+  --color-on-primary: #ffffff;
   --color-on-primary-container: #3b1768;
 
   --color-secondary: #c9184a;
   --color-secondary-container: #a4133c;
-  --color-on-secondary: #fdf6e9;
+  --color-on-secondary: #ffffff;
 
   --color-tertiary: #d90429;
   --color-tertiary-container: #ffccd5;
-  --color-on-tertiary: #fdf6e9;
+  --color-on-tertiary: #ffffff;
   --color-on-tertiary-container: #590d22;
 
   --color-error: #b91c1c;
@@ -35,7 +35,7 @@
   --color-on-surface: #261142;
   --color-on-surface-variant: #4c2e75;
   --color-outline: #705299;
-  --color-outline-variant: #dcc29a;
+  --color-outline-variant: #e2e8f0;
 }
 
 @layer base {
