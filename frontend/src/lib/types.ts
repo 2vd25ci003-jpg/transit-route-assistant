@@ -23,16 +23,30 @@ export interface RouteDetail extends Route {
   stops: RouteStop[];
 }
 
+export interface RouteLeg {
+  route: Route;
+  stops: Stop[];
+  estimated_minutes: number;
+}
+
 export interface DirectRouteResult {
   type: "direct";
+  num_transfers: number;
+  estimated_minutes: number;
   route: Route;
+  legs: RouteLeg[];
+  transfer_stops: Stop[];
 }
 
 export interface TransferRouteResult {
   type: "transfer";
-  first_route: Route;
-  second_route: Route;
-  transfer_stop: Stop;
+  num_transfers: number;
+  estimated_minutes: number;
+  first_route?: Route | null;
+  second_route?: Route | null;
+  transfer_stop?: Stop | null;
+  legs: RouteLeg[];
+  transfer_stops: Stop[];
 }
 
 export type RouteSearchResult = DirectRouteResult | TransferRouteResult;

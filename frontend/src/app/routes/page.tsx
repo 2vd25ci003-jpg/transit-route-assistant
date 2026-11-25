@@ -50,11 +50,14 @@ function RoutesContent() {
           setSearchResults(found);
           if (found.length > 0) {
             const firstRouteId =
-              found[0].type === "direct"
+              found[0].legs?.[0]?.route.id ??
+              (found[0].type === "direct"
                 ? found[0].route.id
-                : found[0].first_route.id;
-            const detail = await api.getRouteDetail(firstRouteId);
-            if (mounted) setSelectedDetail(detail);
+                : found[0].first_route?.id ?? allRoutes[0]?.id);
+            if (firstRouteId) {
+              const detail = await api.getRouteDetail(firstRouteId);
+              if (mounted) setSelectedDetail(detail);
+            }
           }
         } else if (allRoutes.length > 0) {
           const detail = await api.getRouteDetail(allRoutes[0].id);
@@ -138,52 +141,65 @@ function RoutesContent() {
                 No direct or one-transfer route found between these stops.
               </div>
             ) : (
-              searchResults.map((res, idx) =>
-                res.type === "direct" ? (
-                  <button
-                    key={`d-${res.route.id}-${idx}`}
-                    type="button"
-                    onClick={() => selectRoute(res.route.id)}
-                    className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-left transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-bold">
-                        Direct
+              searchResults.map((res, idx) => (
+                <div
+                  key={`journey-${idx}`}
+                  className="p-3.5 rounded-xl bg-surface-container border border-outline-variant/20 flex flex-col gap-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`px-2.5 py-0.5 rounded text-xs font-bold ${
+                          res.num_transfers === 0
+                            ? "bg-primary text-on-primary"
+                            : res.num_transfers === 1
+                            ? "bg-secondary text-on-secondary"
+                            : "bg-tertiary text-on-tertiary"
+                        }`}
+                      >
+                        {res.num_transfers === 0
+                          ? "Direct"
+                          : `${res.num_transfers} Transfer${
+                              res.num_transfers > 1 ? "s" : ""
+                            }`}
                       </span>
-                      <span className="text-sm font-semibold text-on-surface">
-                        {res.route.name}
-                      </span>
-                    </div>
-                    <span className="material-symbols-outlined text-primary text-[20px]">
-                      chevron_right
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    key={`t-${res.first_route.id}-${res.second_route.id}-${idx}`}
-                    type="button"
-                    onClick={() => selectRoute(res.first_route.id)}
-                    className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-left transition-colors"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded bg-secondary text-on-secondary text-xs font-bold">
-                          1 Transfer
-                        </span>
+                      {res.transfer_stops.length > 0 && (
                         <span className="text-xs text-tertiary font-semibold">
-                          via {res.transfer_stop.name}
+                          via{" "}
+                          {res.transfer_stops.map((ts) => ts.name).join(" → ")}
                         </span>
-                      </div>
-                      <span className="text-sm font-semibold text-on-surface">
-                        {res.first_route.name} → {res.second_route.name}
-                      </span>
+                      )}
                     </div>
-                    <span className="material-symbols-outlined text-secondary text-[20px]">
-                      chevron_right
+                    <span className="text-xs font-mono font-bold text-primary shrink-0">
+                      ~{Math.round(res.estimated_minutes)} min
                     </span>
-                  </button>
-                )
-              )
+                  </div>
+
+                  {/* Legs breakdown */}
+                  <div className="flex flex-col gap-1.5">
+                    {res.legs.map((leg, lIdx) => (
+                      <button
+                        key={`leg-${idx}-${lIdx}-${leg.route.id}`}
+                        type="button"
+                        onClick={() => selectRoute(leg.route.id)}
+                        className="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-left transition-colors"
+                      >
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-semibold text-on-surface truncate">
+                            Leg {lIdx + 1}: {leg.route.name}
+                          </span>
+                          <span className="text-[11px] text-on-surface-variant truncate">
+                            {leg.stops.map((s) => s.name).join(" → ")}
+                          </span>
+                        </div>
+                        <span className="text-[11px] font-mono text-primary shrink-0 ml-2">
+                          {Math.round(leg.estimated_minutes)}m
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))
             )}
           </section>
         )}

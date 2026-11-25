@@ -62,20 +62,36 @@ class RouteDetailOut(RouteOut):
 # ---------------------------------------------------------------------------
 
 
+class RouteLegOut(BaseModel):
+    """A single route leg within a journey."""
+
+    route: RouteOut
+    stops: list[StopOut]
+    estimated_minutes: float
+
+
 class DirectRouteResult(BaseModel):
     """A single route that connects origin to destination directly."""
 
     type: Literal["direct"] = "direct"
+    num_transfers: int = 0
+    estimated_minutes: float = 0.0
     route: RouteOut
+    legs: list[RouteLegOut] = []
+    transfer_stops: list[StopOut] = []
 
 
 class TransferRouteResult(BaseModel):
-    """Two routes connected by a transfer stop."""
+    """Multi-leg journey with one or two transfers."""
 
     type: Literal["transfer"] = "transfer"
-    first_route: RouteOut
-    second_route: RouteOut
-    transfer_stop: StopOut
+    num_transfers: int = 1
+    estimated_minutes: float = 0.0
+    first_route: RouteOut | None = None
+    second_route: RouteOut | None = None
+    transfer_stop: StopOut | None = None
+    legs: list[RouteLegOut] = []
+    transfer_stops: list[StopOut] = []
 
 
 # ---------------------------------------------------------------------------
