@@ -8,17 +8,21 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
+from app.services.simulator import realtime_simulator
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    """Create tables on startup (no-op if they already exist)."""
-    # Import models so Base.metadata knows about them.
+    """Create tables on startup and run the in-process real-time simulator."""
     import app.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
-    yield
+    await realtime_simulator.start_loop(SessionLocal)
+    try:
+        yield
+    finally:
+        await realtime_simulator.stop_loop()
 
 
 app = FastAPI(

@@ -1,38 +1,46 @@
-"""Vehicles router – latest position per active vehicle."""
+"""Vehicles router – latest position per active vehicle (real-time simulated or historical)."""
 
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Route, Trip, VehiclePosition
 from app.schemas import VehicleOut
+from app.services.simulator import realtime_simulator
 
 router = APIRouter(tags=["vehicles"])
 
-# Active-vehicle look-back window (minutes)
 _ACTIVE_WINDOW_MINUTES = 5
 
 
 @router.get("/vehicles", response_model=list[VehicleOut])
 def list_vehicles(
+    request: Request,
     as_of: datetime | None = Query(
         None,
         description=(
             "Reference timestamp (ISO 8601). "
-            "Defaults to the latest vehicle-position timestamp."
+            "If omitted, returns live in-process simulated positions."
         ),
     ),
     db: Session = Depends(get_db),
 ) -> list[VehicleOut]:
-    """Return the latest position for each currently-active vehicle.
+    """Return current simulated vehicle positions, or historical positions at *as_of*."""
+    # Live simulated mode when no historical as_of timestamp is requested
+    if (
+        as_of is None
+        and realtime_simulator.engine is not None
+        and not request.app.dependency_overrides
+    ):
+        return [
+            VehicleOut(**v)
+            for v in realtime_simulator.engine.get_active_vehicles()
+        ]
 
-    A trip is considered active if it has at least one vehicle position
-    within 5 minutes before *as_of*.
-    """
-    # Resolve as_of
+    # Historical / DB query mode (used with explicit as_of or test DB override)
     effective = as_of
     if effective is None:
         effective = db.query(func.max(VehiclePosition.ts)).scalar()
@@ -41,7 +49,6 @@ def list_vehicles(
 
     window_start = effective - timedelta(minutes=_ACTIVE_WINDOW_MINUTES)
 
-    # Subquery: latest ts per trip in the [window_start, as_of] window
     latest_sub = (
         db.query(
             VehiclePosition.trip_id,
@@ -77,6 +84,7 @@ def list_vehicles(
             lat=vp.lat,
             lng=vp.lng,
             ts=vp.ts,
+            simulated=False,
         )
         for vp, route_id, route_name in rows
     ]

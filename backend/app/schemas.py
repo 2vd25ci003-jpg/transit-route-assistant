@@ -106,6 +106,7 @@ class EtaOut(BaseModel):
     route_name: str
     trip_id: int
     eta_minutes: float
+    simulated: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +123,8 @@ class VehicleOut(BaseModel):
     lat: float
     lng: float
     ts: datetime
+    speed_kmh: float | None = None
+    simulated: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -230,4 +233,23 @@ class AdminAnalyticsOut(BaseModel):
     stop_demands: list[StopDemandOut]
     route_headways: list[RouteHeadwayOut]
     hourly_demand_series: list[HourlyDemandPoint]
+
+
+class BunchingExperimentArmOut(BaseModel):
+    """Aggregated headway metrics for one simulator configuration."""
+
+    headway_mean_min: float
+    headway_std_min: float
+    bunching_count: int
+    sample_series: list[float]
+
+
+class BunchingExperimentOut(BaseModel):
+    """Simulated comparison of headway variance without vs with holding strategy."""
+
+    simulated: bool = True
+    seeds: list[int]
+    without_holding: BunchingExperimentArmOut
+    with_holding: BunchingExperimentArmOut
+    std_reduction_pct: float
 

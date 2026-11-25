@@ -15,9 +15,14 @@ from app.models import Boarding, Route, Stop, Trip, VehiclePosition
 from app.routers.forecast import _get_model
 from app.schemas import (
     AdminAnalyticsOut,
+    BunchingExperimentOut,
     HourlyDemandPoint,
     RouteHeadwayOut,
     StopDemandOut,
+)
+from app.services.simulator import (
+    load_route_geometries,
+    run_bunching_experiment,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -204,3 +209,13 @@ def get_admin_analytics(db: Session = Depends(get_db)) -> AdminAnalyticsOut:
         route_headways=route_headways,
         hourly_demand_series=hourly_demand_series,
     )
+
+
+@router.get("/bunching-experiment", response_model=BunchingExperimentOut)
+def get_bunching_experiment(
+    db: Session = Depends(get_db),
+) -> BunchingExperimentOut:
+    """Run simulated 5-seed experiment comparing headway variance with vs without holding."""
+    geometries = load_route_geometries(db)
+    result = run_bunching_experiment(geometries)
+    return BunchingExperimentOut(**result)

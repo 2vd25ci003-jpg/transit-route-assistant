@@ -1,21 +1,23 @@
-"""Tests for the vehicle simulator (backend/simulator.py)."""
+"""Tests for the real-time physics simulator, holding strategy, and bunching experiment."""
 
-from datetime import datetime
-import statistics
-
-import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+import pytest
 
 from app.database import Base
-from app.models import Route, RouteStop, Stop, Trip, VehiclePosition
-from simulator import simulate
+from app.models import Boarding, Route, RouteStop, Stop
+from app.services.simulator import (
+    TransitSimulationEngine,
+    load_route_geometries,
+    run_bunching_experiment,
+)
+from datetime import datetime
 
 
 @pytest.fixture()
 def sim_db():
-    """Isolated in-memory SQLite DB with 1 route and 7 stops."""
+    """Isolated in-memory SQLite DB with 1 route, 7 stops, and boardings."""
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -33,11 +35,14 @@ def sim_db():
     db = Session()
 
     stops = [
-        Stop(name=f"Sim Stop {i}", lat=15.36 + i * 0.01, lng=75.12 + i * 0.01)
+        Stop(name=f"Sim Stop {i}", lat=15.36 + i * 0.015, lng=75.12 + i * 0.015)
         for i in range(1, 8)
     ]
     db.add_all(stops)
     db.flush()
+
+    for s in stops:
+        db.add(Boarding(stop_id=s.id, ts=datetime(2026, 11, 24, 8, 0), count=25))
 
     route = Route(name="Sim Route 1")
     db.add(route)
@@ -51,93 +56,53 @@ def sim_db():
     db.close()
 
 
-def _trip_vp_times(db, trip_id: int) -> list[datetime]:
-    rows = (
-        db.query(VehiclePosition.ts)
-        .filter(VehiclePosition.trip_id == trip_id)
-        .order_by(VehiclePosition.ts)
-        .all()
-    )
-    return [r[0] for r in rows]
-
-
-def test_buses_advance_all_stops(sim_db):
-    """A single bus visits all 7 stops with strictly ascending timestamps."""
-    start = datetime(2026, 11, 24, 9, 0, 0)
-    trips = simulate(
-        sim_db,
-        start_time=start,
-        bunching=False,
-        buses_per_route=1,
-        duration_minutes=60.0,
-        batch=True,
-    )
-    assert len(trips) == 1
-    times = _trip_vp_times(sim_db, trips[0].id)
-    assert len(times) == 7
-    assert times == sorted(times)
-    assert len(set(times)) == 7
-
-
-def test_one_vp_per_stop(sim_db):
-    """Each trip produces exactly one VehiclePosition row per route stop."""
-    start = datetime(2026, 11, 24, 9, 0, 0)
-    trips = simulate(
-        sim_db,
-        start_time=start,
-        bunching=True,
-        seed=42,
+def test_buses_move_by_distance_and_speed(sim_db):
+    """Simulated buses advance along route segments and report simulated=True."""
+    geometries = load_route_geometries(sim_db)
+    engine = TransitSimulationEngine(
+        geometries,
         buses_per_route=2,
         headway_minutes=10.0,
-        duration_minutes=60.0,
-        batch=True,
-    )
-    assert len(trips) == 2
-    for trip in trips:
-        vps = (
-            sim_db.query(VehiclePosition)
-            .filter(VehiclePosition.trip_id == trip.id)
-            .all()
-        )
-        assert len(vps) == 7
-
-
-def test_bunching_on_produces_uneven_headway(sim_db):
-    """With bunching=True, leader delays cause uneven headways (stdev > 0)."""
-    start = datetime(2026, 11, 24, 9, 0, 0)
-    trips = simulate(
-        sim_db,
-        start_time=start,
-        bunching=True,
+        holding=False,
         seed=42,
-        buses_per_route=2,
-        headway_minutes=10.0,
-        duration_minutes=60.0,
-        batch=True,
     )
-    assert len(trips) == 2
-    t0 = _trip_vp_times(sim_db, trips[0].id)
-    t1 = _trip_vp_times(sim_db, trips[1].id)
-    headways = [(t1[i] - t0[i]).total_seconds() / 60.0 for i in range(len(t0))]
-    assert statistics.stdev(headways) > 0.0
-    assert min(headways) < 10.0
+    for _ in range(60):  # 15 minutes
+        engine.step(dt_seconds=15.0)
+
+    vehicles = engine.get_active_vehicles()
+    assert len(vehicles) >= 1
+    assert all(v["simulated"] is True for v in vehicles)
+    assert all(v["speed_kmh"] > 0 for v in vehicles)
+
+    # Check ETA for the final stop is computed from distance, speed, and dwell
+    final_stop_id = geometries[0].stops[-1].stop_id
+    etas = engine.compute_etas_for_stop(final_stop_id)
+    assert len(etas) >= 1
+    assert all(e["simulated"] is True and e["eta_minutes"] > 0 for e in etas)
 
 
-def test_bunching_off_produces_even_headway(sim_db):
-    """With bunching=False, all buses maintain identical constant headways."""
-    start = datetime(2026, 11, 24, 9, 0, 0)
-    trips = simulate(
-        sim_db,
-        start_time=start,
-        bunching=False,
-        seed=42,
-        buses_per_route=2,
-        headway_minutes=10.0,
-        duration_minutes=60.0,
-        batch=True,
+def test_holding_strategy_reduces_headway_variance(sim_db):
+    """5-seed experiment shows holding reduces or stabilizes headway variance/bunching."""
+    geometries = load_route_geometries(sim_db)
+    result = run_bunching_experiment(geometries, seeds=[42, 43, 44, 45, 46], sim_minutes=90)
+    assert result["simulated"] is True
+    assert result["seeds"] == [42, 43, 44, 45, 46]
+    assert len(result["without_holding"]["sample_series"]) > 0
+    assert len(result["with_holding"]["sample_series"]) > 0
+    assert (
+        result["with_holding"]["headway_std_min"]
+        <= result["without_holding"]["headway_std_min"]
     )
-    assert len(trips) == 2
-    t0 = _trip_vp_times(sim_db, trips[0].id)
-    t1 = _trip_vp_times(sim_db, trips[1].id)
-    headways = [(t1[i] - t0[i]).total_seconds() / 60.0 for i in range(len(t0))]
-    assert all(pytest.approx(10.0) == h for h in headways)
+
+
+def test_admin_bunching_experiment_endpoint(client):
+    """GET /admin/bunching-experiment returns 5-seed simulated results."""
+    resp = client.get("/admin/bunching-experiment")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["simulated"] is True
+    assert len(data["seeds"]) == 5
+    assert "without_holding" in data
+    assert "with_holding" in data
+    assert "sample_series" in data["without_holding"]
+    assert "sample_series" in data["with_holding"]
