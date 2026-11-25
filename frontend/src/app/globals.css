@@ -61,3 +61,54 @@
 .maplibregl-ctrl-attrib a {
   color: #d64527 !important;
 }
+
+@keyframes hero-bus-drive {
+  0% {
+    transform: translate3d(-180px, 0, 0);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 180px), 0, 0);
+  }
+}
+
+@keyframes hero-bus-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes hero-wheel-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.hero-bus-track {
+  animation: hero-bus-drive 12s linear infinite;
+}
+
+.hero-bus-bounce {
+  animation: hero-bus-bounce 0.45s ease-in-out infinite;
+}
+
+.hero-wheel-spin {
+  animation: hero-wheel-spin 0.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bus-track {
+    animation: none;
+    transform: translate3d(24px, 0, 0);
+  }
+  .hero-bus-bounce,
+  .hero-wheel-spin {
+    animation: none;
+  }
+}
