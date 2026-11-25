@@ -2,47 +2,47 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 @theme {
-  /* Sugar Violet base/background, White cards & containers, Cherry Red accents */
-  --color-surface: #ede0ff;
-  --color-surface-dim: #e2cdfc;
-  --color-surface-container-lowest: #f5ecff;
-  --color-surface-container-low: #ffffff;
-  --color-surface-container: #ffffff;
-  --color-surface-container-high: #f8fafc;
-  --color-surface-container-highest: #e2e8f0;
-  --color-surface-bright: #cbd5e1;
-  --color-surface-tint: #5b21b6;
+  /* 60% Ricotta Cream, 30% Prussian Blue, 10% Lobster Red */
+  --color-surface: #faf6ef;
+  --color-surface-dim: #f0e9dc;
+  --color-surface-container-lowest: #fffdf9;
+  --color-surface-container-low: #f7f1e6;
+  --color-surface-container: #f2eadc;
+  --color-surface-container-high: #e9dfd0;
+  --color-surface-container-highest: #ddd0bd;
+  --color-surface-bright: #cfc0a9;
+  --color-surface-tint: #003153;
 
-  --color-primary: #5b21b6;
-  --color-primary-container: #ffffff;
-  --color-primary-fixed: #ffffff;
-  --color-on-primary: #ffffff;
-  --color-on-primary-container: #3b1768;
+  --color-primary: #003153;
+  --color-primary-container: #0a3d62;
+  --color-primary-fixed: #d6e6f2;
+  --color-on-primary: #faf6ef;
+  --color-on-primary-container: #faf6ef;
 
-  --color-secondary: #c9184a;
-  --color-secondary-container: #a4133c;
-  --color-on-secondary: #ffffff;
+  --color-secondary: #d64527;
+  --color-secondary-container: #b5351b;
+  --color-on-secondary: #faf6ef;
 
-  --color-tertiary: #d90429;
-  --color-tertiary-container: #ffccd5;
-  --color-on-tertiary: #ffffff;
-  --color-on-tertiary-container: #590d22;
+  --color-tertiary: #e05336;
+  --color-tertiary-container: #fde2dc;
+  --color-on-tertiary: #faf6ef;
+  --color-on-tertiary-container: #7a1e0c;
 
   --color-error: #b91c1c;
   --color-error-container: #fee2e2;
   --color-on-error-container: #7f1d1d;
 
-  --color-on-surface: #261142;
-  --color-on-surface-variant: #4c2e75;
-  --color-outline: #705299;
-  --color-outline-variant: #e2e8f0;
+  --color-on-surface: #00223b;
+  --color-on-surface-variant: #1c4b6e;
+  --color-outline: #4a6b82;
+  --color-outline-variant: #d8cebe;
 }
 
 @layer base {
   html,
   body {
-    background-color: #ede0ff;
-    color: #261142;
+    background-color: #faf6ef;
+    color: #00223b;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     overscroll-behavior: none;
   }
@@ -53,11 +53,11 @@
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgba(237, 224, 255, 0.88) !important;
-  color: #4c2e75 !important;
+  background: rgba(250, 246, 239, 0.88) !important;
+  color: #003153 !important;
   font-size: 10px !important;
 }
 
 .maplibregl-ctrl-attrib a {
-  color: #c9184a !important;
+  color: #d64527 !important;
 }

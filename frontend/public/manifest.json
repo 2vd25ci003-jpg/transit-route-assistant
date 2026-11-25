@@ -4,8 +4,8 @@
   "description": "Local Public Transportation Information, 3D Live Tracking & Route Assistant",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ede0ff",
-  "theme_color": "#ffffff",
+  "background_color": "#faf6ef",
+  "theme_color": "#003153",
   "icons": [
     {
       "src": "/icons/icon.svg",

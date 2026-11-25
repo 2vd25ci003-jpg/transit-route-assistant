@@ -22,8 +22,8 @@ Read `SPEC.md` for scope and `PLAN.md` for the current task list before starting
 
 ## Design Source of Truth
 - Screens live in `/docs/design/<screen>/code.html` and `screen.png`: home_search, route_result, live_tracking, transit_operator_admin_dashboard.
-- **3D Redesign Approved**: Sugar Violet background (`#ede0ff`) with White cards/surfaces (`#ffffff`, `#f8fafc`) and Cherry Red accents (`#c9184a`), using 3D glassmorphism cards, layered shadows, and tilt-on-hover interactions plus a 3D MapLibre GL JS + deck.gl map (with a flat 2D Lite mode fallback).
-- Tokens: surface `#ede0ff` (Sugar Violet), surface-container-low `#ffffff` (White), surface-container `#f8fafc`, surface-container-highest `#e2e8f0`, primary `#5b21b6`, secondary `#c9184a` (Cherry Red), tertiary `#d90429`.
+- **3D Redesign Approved**: 60-30-10 palette — 60% Ricotta Cream (`#faf6ef`, `#f2eadc`), 30% Prussian Blue (`#003153`, `#0a3d62`), 10% Lobster Red (`#d64527`), using 3D glassmorphism cards, layered shadows, and tilt-on-hover interactions plus a 3D MapLibre GL JS + deck.gl map (with a flat 2D Lite mode fallback).
+- Tokens: surface `#faf6ef` (Ricotta Cream), surface-container-low `#f7f1e6`, surface-container `#f2eadc`, surface-container-highest `#ddd0bd`, primary `#003153` (Prussian Blue), secondary `#d64527` (Lobster Red), tertiary `#e05336`.
 - Map stack: MapLibre GL JS + deck.gl with free OpenFreeMap vector tiles (no API key). Respect `prefers-reduced-motion`.
 - Icons: Material Symbols Outlined. Mobile-first for passenger screens; desktop layout for the admin dashboard.
 - Convert Stitch HTML into reusable React components (e.g. SearchCard, NearbyStopCard, BottomNav, StopTimeline, KpiCard). Do not paste the HTML as-is.
