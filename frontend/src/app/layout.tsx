@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { StartupSplash } from "@/components/StartupSplash";
 import { CONFIG } from "@/lib/config";
 import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
@@ -35,7 +36,10 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface text-on-surface min-h-screen antialiased selection:bg-primary-container selection:text-on-primary-container">
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          <StartupSplash />
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );
