@@ -167,7 +167,7 @@ export function TransitMap({
             type: "fill-extrusion",
             minzoom: 12,
             paint: {
-              "fill-extrusion-color": "#e4ceff",
+              "fill-extrusion-color": "#f9ebd2",
               "fill-extrusion-height": [
                 "coalesce",
                 ["get", "render_height"],
@@ -266,7 +266,7 @@ export function TransitMap({
           id: "route-glow",
           data: pathData,
           getPath: (d) => d.path,
-          getColor: [124, 58, 237, 100],
+          getColor: [253, 246, 233, 185],
           widthMinPixels: 11,
           capRounded: true,
           jointRounded: true,
@@ -326,8 +326,8 @@ export function TransitMap({
               return val > 35
                 ? [201, 24, 74, 235]
                 : val > 18
-                ? [124, 58, 237, 220]
-                : [198, 153, 255, 210];
+                ? [249, 235, 210, 235]
+                : [109, 40, 217, 215];
             },
             transitions: prefersReducedMotion ? undefined : { getElevation: 350 },
             onHover: (info) => {
@@ -397,8 +397,8 @@ export function TransitMap({
           getFillColor: (d) =>
             focusStop && focusStop.id === d.id
               ? [201, 24, 74, 255]
-              : [253, 247, 239, 245],
-          getLineColor: [109, 40, 217, 255],
+              : [109, 40, 217, 245],
+          getLineColor: [253, 246, 233, 255],
           onClick: (info) => {
             if (info.object && onSelectStop) onSelectStop(info.object);
           },

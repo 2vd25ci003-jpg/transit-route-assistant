@@ -2,29 +2,30 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 @theme {
-  --color-surface: #fdf7ef;
-  --color-surface-dim: #f7ecdc;
-  --color-surface-container-lowest: #fffdf9;
-  --color-surface-container-low: #f6edff;
-  --color-surface-container: #efe2ff;
-  --color-surface-container-high: #e4ceff;
-  --color-surface-container-highest: #d5b4ff;
-  --color-surface-bright: #c699ff;
-  --color-surface-tint: #6d28d9;
+  /* Swapped: Sugar Violet base/background, Vanilla Cream cards & containers, Cherry Red accents */
+  --color-surface: #ede0ff;
+  --color-surface-dim: #e2cdfc;
+  --color-surface-container-lowest: #f5ecff;
+  --color-surface-container-low: #fdf6e9;
+  --color-surface-container: #f9ebd2;
+  --color-surface-container-high: #f2dec0;
+  --color-surface-container-highest: #ead3af;
+  --color-surface-bright: #e0c193;
+  --color-surface-tint: #5b21b6;
 
-  --color-primary: #6d28d9;
-  --color-primary-container: #7c3aed;
-  --color-primary-fixed: #ede0ff;
-  --color-on-primary: #fffaf0;
-  --color-on-primary-container: #fffaf0;
+  --color-primary: #5b21b6;
+  --color-primary-container: #f5e1be;
+  --color-primary-fixed: #fdf6e9;
+  --color-on-primary: #fdf6e9;
+  --color-on-primary-container: #3b1768;
 
   --color-secondary: #c9184a;
   --color-secondary-container: #a4133c;
-  --color-on-secondary: #fffaf0;
+  --color-on-secondary: #fdf6e9;
 
   --color-tertiary: #d90429;
   --color-tertiary-container: #ffccd5;
-  --color-on-tertiary: #fffaf0;
+  --color-on-tertiary: #fdf6e9;
   --color-on-tertiary-container: #590d22;
 
   --color-error: #b91c1c;
@@ -32,15 +33,15 @@
   --color-on-error-container: #7f1d1d;
 
   --color-on-surface: #261142;
-  --color-on-surface-variant: #55387d;
-  --color-outline: #7e62a8;
-  --color-outline-variant: #d8c2f5;
+  --color-on-surface-variant: #4c2e75;
+  --color-outline: #705299;
+  --color-outline-variant: #dcc29a;
 }
 
 @layer base {
   html,
   body {
-    background-color: #fdf7ef;
+    background-color: #ede0ff;
     color: #261142;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     overscroll-behavior: none;
@@ -52,8 +53,8 @@
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgba(253, 247, 239, 0.85) !important;
-  color: #55387d !important;
+  background: rgba(237, 224, 255, 0.88) !important;
+  color: #4c2e75 !important;
   font-size: 10px !important;
 }
 

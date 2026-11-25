@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <rect width="128" height="128" rx="28" fill="#fdf7ef"/>
-  <rect x="12" y="12" width="104" height="104" rx="22" fill="#efe2ff" stroke="#6d28d9" stroke-width="4"/>
+  <rect width="128" height="128" rx="28" fill="#ede0ff"/>
+  <rect x="12" y="12" width="104" height="104" rx="22" fill="#f9ebd2" stroke="#5b21b6" stroke-width="4"/>
   <path d="M36 42C36 33.1634 43.1634 26 52 26H76C84.8366 26 92 33.1634 92 42V82C92 86.4183 88.4183 90 84 90H44C39.5817 90 36 86.4183 36 82V42Z" fill="#c9184a"/>
-  <rect x="44" y="36" width="40" height="24" rx="4" fill="#fffaf0"/>
-  <circle cx="48" cy="76" r="5" fill="#fffaf0"/>
-  <circle cx="80" cy="76" r="5" fill="#fffaf0"/>
-  <path d="M44 96H52M76 96H84" stroke="#6d28d9" stroke-width="6" stroke-linecap="round"/>
+  <rect x="44" y="36" width="40" height="24" rx="4" fill="#fdf6e9"/>
+  <circle cx="48" cy="76" r="5" fill="#fdf6e9"/>
+  <circle cx="80" cy="76" r="5" fill="#fdf6e9"/>
+  <path d="M44 96H52M76 96H84" stroke="#5b21b6" stroke-width="6" stroke-linecap="round"/>
 </svg>
