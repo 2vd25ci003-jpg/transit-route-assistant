@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
+import { TopNav } from "@/components/TopNav";
 import { TransitMap } from "@/components/TransitMap";
 import { api } from "@/lib/api";
-import { CONFIG } from "@/lib/config";
 import type { Stop, Vehicle } from "@/lib/types";
 
 export default function MapExplorerPage() {
@@ -27,62 +27,63 @@ export default function MapExplorerPage() {
   );
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface pb-24">
-      <header className="sticky top-0 z-40 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20">
-        <div className="max-w-4xl mx-auto h-14 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px]">
-                3d_rotation
-              </span>
-            </div>
-            <div>
-              <h1 className="text-sm font-bold text-on-surface leading-none">
-                3D Transit Explorer
-              </h1>
-              <span className="text-[11px] text-primary font-semibold">
-                {CONFIG.cityName} • MapLibre + deck.gl
-              </span>
-            </div>
-          </div>
-          <span className="text-xs text-on-surface-variant">
+    <div className="min-h-screen bg-surface text-on-surface pb-24 md:pb-10">
+      <TopNav
+        rightSlot={
+          <span className="hidden sm:inline text-xs text-secondary font-semibold">
             {vehicles.length} simulated buses
           </span>
+        }
+      />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-4 flex flex-col gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-on-surface">
+              3D Transit Explorer
+            </h1>
+            <p className="text-xs text-on-surface-variant">
+              Select any stop to smoothly fly the 3D camera
+            </p>
+          </div>
+
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter stops to fly-to..."
+            className="h-11 px-4 rounded-xl bg-surface-container/80 backdrop-blur-md border border-white/10 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary"
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2 max-h-[500px] overflow-y-auto pr-1">
+            {filteredStops.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setFocusStop(s)}
+                className={`px-3.5 py-2.5 min-h-[44px] rounded-xl text-left text-xs font-semibold flex items-center justify-between transition-colors ${
+                  focusStop?.id === s.id
+                    ? "bg-primary text-on-primary"
+                    : "bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
+                }`}
+              >
+                <span>{s.name}</span>
+                <span className="font-mono text-[11px] opacity-75">
+                  #{s.id}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-4 flex flex-col gap-4">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter stops to fly-to..."
-          className="h-11 px-4 rounded-xl bg-surface-container/80 backdrop-blur-md border border-outline-variant/30 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"
-        />
-
-        <TransitMap
-          stops={stops}
-          vehicles={vehicles}
-          focusStop={focusStop}
-          heightClass="h-[440px]"
-          onSelectStop={(s) => setFocusStop(s)}
-        />
-
-        <div className="flex flex-wrap gap-2">
-          {filteredStops.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setFocusStop(s)}
-              className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-colors ${
-                focusStop?.id === s.id
-                  ? "bg-primary-container text-on-primary-container"
-                  : "bg-surface-container text-on-surface-variant hover:text-on-surface"
-              }`}
-            >
-              {s.name}
-            </button>
-          ))}
+        <div className="lg:col-span-8">
+          <TransitMap
+            stops={stops}
+            vehicles={vehicles}
+            focusStop={focusStop}
+            heightClass="h-[420px] lg:h-[620px]"
+            onSelectStop={(s) => setFocusStop(s)}
+          />
         </div>
       </main>
 

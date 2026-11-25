@@ -21,7 +21,7 @@ export function BottomNav() {
   const { t } = useI18n();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
+    <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-surface/85 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_24px_rgba(0,0,0,0.45)]">
       <div className="max-w-lg mx-auto flex justify-around items-center h-16 px-2">
         {NAV_ITEMS.map((item) => {
           const active =
