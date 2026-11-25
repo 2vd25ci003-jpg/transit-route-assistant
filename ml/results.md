@@ -1,22 +1,32 @@
-# ML Forecast Evaluation Results
+# TransitAI Benchmark Results
 
-- **Model**: `RandomForestRegressor(n_estimators=120, max_depth=12, min_samples_leaf=3, random_state=42)`
-- **Features**: `stop_id, hour, day_of_week, is_weekend, lag_7d`
-- **Baseline**: Naive previous-week same-hour same-stop boarding count (`lag_7d`)
-- **Split**: Time-based chronological split — Train: 8880 rows, Val: 1920 rows, Test: 1920 rows
-- **Saved Model**: `ml/models/forecast_rf.joblib`
+> **Note**: All metrics below are measured from real runs on **synthetic Hubli-Dharwad data** (`data/generate.py`) and **simulated** bus operations. Generated: `2026-11-25 11:41 UTC`.
 
-## Validation Metrics
-| Model | MAE | RMSE |
-| :--- | ---: | ---: |
-| Naive Baseline (Prev Week) | 7.16 | 12.30 |
-| Random Forest | 5.87 | 9.55 |
-
-## Test Metrics
-| Model | MAE | RMSE |
+## 1. Demand Forecast (Random Forest vs Previous-Week Baseline)
+| Model | Test MAE | Test RMSE |
 | :--- | ---: | ---: |
 | Naive Baseline (Prev Week) | 7.54 | 11.68 |
 | Random Forest | 6.44 | 9.96 |
 
-- **Test MAE improvement over baseline**: +14.6%
-- **Test RMSE improvement over baseline**: +14.7%
+- **MAE improvement**: `+14.6%`
+- **RMSE improvement**: `+14.7%`
+
+## 2. Fleet Dispatch Optimizer (OR-Tools vs Nearest-Neighbor Baseline)
+| Instance | Nearest-Neighbor Baseline | OR-Tools Distance | Savings |
+| :--- | ---: | ---: | ---: |
+| 2 buses (15 stops) | 73.708 km | 69.824 km | +5.27% |
+| 3 buses (15 stops) | 105.007 km | 69.824 km | +33.51% |
+| 4 buses (15 stops) | 137.219 km | 69.824 km | +49.11% |
+
+## 3. Bus Bunching & Holding Strategy (Simulated, 5 Seeds: [42, 43, 44, 45, 46])
+| Mode | Headway Mean (min) | Headway StdDev (min) | Bunching Events (<4m) |
+| :--- | ---: | ---: | ---: |
+| Without Holding (Simulated) | 6.7 | 5.86 | 35 |
+| With Holding (Simulated) | 6.38 | 4.8 | 31 |
+
+- **Headway StdDev reduction**: `18.1%`
+
+## 4. `/routes/search` Latency (60 stop-pair queries)
+- **p50 latency**: `2.46 ms`
+- **p95 latency**: `2.86 ms` (Target: `< 1000 ms` — **PASS**)
+- **Max latency**: `4.72 ms`

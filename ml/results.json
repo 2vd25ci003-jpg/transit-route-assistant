@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-11-25 11:41 UTC",
+  "synthetic_data_note": "All metrics are measured on synthetic Hubli-Dharwad data (data/generate.py) and simulated bus runs.",
+  "forecast": {
+    "baseline_mae": 7.54,
+    "baseline_rmse": 11.68,
+    "rf_mae": 6.44,
+    "rf_rmse": 9.96,
+    "mae_improvement_pct": 14.6,
+    "rmse_improvement_pct": 14.7
+  },
+  "optimizer": [
+    {
+      "fleet_size": 2,
+      "num_stops": 15,
+      "ortools_km": 69.824,
+      "baseline_km": 73.708,
+      "savings_pct": 5.27
+    },
+    {
+      "fleet_size": 3,
+      "num_stops": 15,
+      "ortools_km": 69.824,
+      "baseline_km": 105.007,
+      "savings_pct": 33.51
+    },
+    {
+      "fleet_size": 4,
+      "num_stops": 15,
+      "ortools_km": 69.824,
+      "baseline_km": 137.219,
+      "savings_pct": 49.11
+    }
+  ],
+  "bunching": {
+    "simulated": true,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "without_holding": {
+      "headway_mean_min": 6.7,
+      "headway_std_min": 5.86,
+      "bunching_count": 35,
+      "sample_series": [
+        8.25,
+        2.5,
+        7.25,
+        -0.75,
+        -7.0,
+        -11.0,
+        -11.25,
+        10.0,
+        10.25,
+        5.5,
+        6.25,
+        6.25,
+        6.25,
+        6.25,
+        5.25,
+        5.25,
+        2.75,
+        2.5,
+        2.75,
+        10.5,
+        10.5,
+        8.25,
+        8.5,
+        8.75
+      ]
+    },
+    "with_holding": {
+      "headway_mean_min": 6.38,
+      "headway_std_min": 4.8,
+      "bunching_count": 31,
+      "sample_series": [
+        8.25,
+        2.5,
+        3.25,
+        0.25,
+        4.25,
+        0.5,
+        -3.5,
+        10.0,
+        10.25,
+        7.0,
+        2.5,
+        -2.75,
+        -6.25,
+        -9.25,
+        5.25,
+        9.25,
+        7.0,
+        7.75,
+        7.5,
+        10.25,
+        6.5,
+        7.25,
+        7.0,
+        7.5
+      ]
+    },
+    "std_reduction_pct": 18.1
+  },
+  "route_search_latency": {
+    "samples": 60,
+    "p50_ms": 2.46,
+    "p95_ms": 2.86,
+    "max_ms": 4.72,
+    "under_1s": true
+  }
+}

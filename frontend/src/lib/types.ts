@@ -135,3 +135,47 @@ export interface AdminAnalytics {
   route_headways: RouteHeadway[];
   hourly_demand_series: HourlyDemandPoint[];
 }
+
+export interface BenchmarkResults {
+  generated_at: string;
+  synthetic_data_note: string;
+  forecast: {
+    baseline_mae: number;
+    baseline_rmse: number;
+    rf_mae: number;
+    rf_rmse: number;
+    mae_improvement_pct: number;
+    rmse_improvement_pct: number;
+  };
+  optimizer: Array<{
+    fleet_size: number;
+    num_stops: number;
+    ortools_km: number;
+    baseline_km: number;
+    savings_pct: number;
+  }>;
+  bunching: {
+    simulated: boolean;
+    seeds: number[];
+    without_holding: {
+      headway_mean_min: number;
+      headway_std_min: number;
+      bunching_count: number;
+      sample_series: number[];
+    };
+    with_holding: {
+      headway_mean_min: number;
+      headway_std_min: number;
+      bunching_count: number;
+      sample_series: number[];
+    };
+    std_reduction_pct: number;
+  };
+  route_search_latency: {
+    samples: number;
+    p50_ms: number;
+    p95_ms: number;
+    max_ms: number;
+    under_1s: boolean;
+  };
+}

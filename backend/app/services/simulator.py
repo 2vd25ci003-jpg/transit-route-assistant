@@ -322,7 +322,8 @@ class TransitSimulationEngine:
                 bus.seg_progress_km -= g.segment_km[bus.current_seg]
                 bus.current_seg += 1
                 stop_idx = bus.current_seg
-                bus.stop_arrivals[stop_idx] = self.current_time
+                if stop_idx not in bus.stop_arrivals:
+                    bus.stop_arrivals[stop_idx] = self.current_time
 
                 if stop_idx >= len(g.stops) - 1:
                     if g.is_circular:

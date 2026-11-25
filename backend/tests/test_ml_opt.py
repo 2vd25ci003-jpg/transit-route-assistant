@@ -92,3 +92,13 @@ def test_admin_analytics_returns_summary(client):
     assert data["active_vehicles"] >= 1
     assert len(data["stop_demands"]) == 4
     assert len(data["route_headways"]) == 2
+
+
+def test_admin_results_returns_benchmarks(client):
+    resp = client.get("/admin/results")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "forecast" in data
+    assert "optimizer" in data
+    assert "bunching" in data
+    assert "route_search_latency" in data

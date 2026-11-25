@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { CONFIG } from "@/lib/config";
 import type {
   AdminAnalytics,
+  BenchmarkResults,
   ForecastResponse,
   OptimizeResponse,
   Vehicle,
@@ -15,6 +16,7 @@ import type {
 
 export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [benchmarks, setBenchmarks] = useState<BenchmarkResults | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [forecast, setForecast] = useState<ForecastResponse | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<number>(1);
@@ -25,12 +27,14 @@ export default function AdminDashboardPage() {
 
   async function loadDashboard() {
     try {
-      const [aData, vData] = await Promise.all([
+      const [aData, vData, bData] = await Promise.all([
         api.getAdminAnalytics(),
         api.getVehicles(),
+        api.getBenchmarkResults().catch(() => null),
       ]);
       setAnalytics(aData);
       setVehicles(vData);
+      setBenchmarks(bData);
       if (aData.stop_demands.length > 0) {
         const firstId = aData.stop_demands[0].stop_id;
         setSelectedStopId((prev) => prev || firstId);
@@ -506,6 +510,104 @@ export default function AdminDashboardPage() {
               )}
             </div>
           </section>
+
+          {/* Benchmark Results Card */}
+          {benchmarks && (
+            <section className="bg-surface-container-low rounded-xl p-5 flex flex-col gap-4 border border-outline-variant/20">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-on-surface">
+                      System Benchmark Results
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full bg-secondary/15 text-secondary text-[11px] font-semibold">
+                      Synthetic &amp; Simulated Data
+                    </span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    {benchmarks.synthetic_data_note} (Generated:{" "}
+                    {benchmarks.generated_at})
+                  </p>
+                </div>
+                <span className="text-xs font-mono text-primary">
+                  /routes/search p95: {benchmarks.route_search_latency.p95_ms}{" "}
+                  ms
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                {/* Forecast */}
+                <div className="bg-surface-container rounded-xl p-4 flex flex-col gap-2">
+                  <div className="font-semibold text-on-surface flex items-center justify-between">
+                    <span>Demand Forecast (Test)</span>
+                    <span className="text-primary font-mono">
+                      +{benchmarks.forecast.mae_improvement_pct}% MAE
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>Random Forest MAE / RMSE</span>
+                    <span className="font-mono text-on-surface font-semibold">
+                      {benchmarks.forecast.rf_mae} /{" "}
+                      {benchmarks.forecast.rf_rmse}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>Prev-Week Baseline</span>
+                    <span className="font-mono">
+                      {benchmarks.forecast.baseline_mae} /{" "}
+                      {benchmarks.forecast.baseline_rmse}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Optimizer */}
+                <div className="bg-surface-container rounded-xl p-4 flex flex-col gap-2">
+                  <div className="font-semibold text-on-surface">
+                    Optimizer (OR-Tools vs NN)
+                  </div>
+                  {benchmarks.optimizer.map((opt) => (
+                    <div
+                      key={opt.fleet_size}
+                      className="flex justify-between text-on-surface-variant"
+                    >
+                      <span>{opt.fleet_size} buses:</span>
+                      <span className="font-mono text-on-surface">
+                        {opt.ortools_km} km vs {opt.baseline_km} km (
+                        <span className="text-primary">
+                          -{opt.savings_pct}%
+                        </span>
+                        )
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bunching Experiment */}
+                <div className="bg-surface-container rounded-xl p-4 flex flex-col gap-2">
+                  <div className="font-semibold text-on-surface flex items-center justify-between">
+                    <span>Holding Strategy (Simulated)</span>
+                    <span className="text-tertiary font-mono">
+                      {benchmarks.bunching.std_reduction_pct}% StdDev
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>Without Holding (StdDev / Bunching)</span>
+                    <span className="font-mono text-on-surface">
+                      {benchmarks.bunching.without_holding.headway_std_min}m /{" "}
+                      {benchmarks.bunching.without_holding.bunching_count}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant">
+                    <span>With Holding (StdDev / Bunching)</span>
+                    <span className="font-mono text-primary font-semibold">
+                      {benchmarks.bunching.with_holding.headway_std_min}m /{" "}
+                      {benchmarks.bunching.with_holding.bunching_count}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
         </main>
       </div>
     </div>

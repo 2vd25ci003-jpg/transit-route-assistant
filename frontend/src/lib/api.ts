@@ -1,6 +1,7 @@
 import { CONFIG } from "./config";
 import type {
   AdminAnalytics,
+  BenchmarkResults,
   EtaItem,
   ForecastResponse,
   NearbyStop,
@@ -78,4 +79,7 @@ export const api = {
 
   getAdminAnalytics: (): Promise<AdminAnalytics> =>
     apiFetch<AdminAnalytics>("/admin/analytics"),
+
+  getBenchmarkResults: (): Promise<BenchmarkResults> =>
+    apiFetch<BenchmarkResults>("/admin/results"),
 };
