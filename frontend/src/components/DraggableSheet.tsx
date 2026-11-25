@@ -23,7 +23,7 @@ export function DraggableSheet({ children, title }: DraggableSheetProps) {
       }}
       animate={{ y: expanded ? -40 : 0 }}
       transition={{ type: "spring", stiffness: 280, damping: 28 }}
-      className="relative -mt-6 z-20 bg-surface-container-low/90 backdrop-blur-2xl border-t border-white/15 rounded-t-3xl shadow-[0_-12px_36px_rgba(0,0,0,0.55)] px-4 pt-3 pb-6"
+      className="relative -mt-6 z-20 bg-surface-container-low/95 backdrop-blur-2xl border-t border-primary/20 rounded-t-3xl shadow-[0_-12px_36px_rgba(76,29,149,0.18)] px-4 pt-3 pb-6"
     >
       <button
         type="button"

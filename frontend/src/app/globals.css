@@ -2,45 +2,46 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 @theme {
-  --color-surface: #071126;
-  --color-surface-dim: #071126;
-  --color-surface-container-lowest: #040a18;
-  --color-surface-container-low: #0c1936;
-  --color-surface-container: #112144;
-  --color-surface-container-high: #172b54;
-  --color-surface-container-highest: #1f3666;
-  --color-surface-bright: #26427a;
-  --color-surface-tint: #ffffff;
+  --color-surface: #fdf7ef;
+  --color-surface-dim: #f7ecdc;
+  --color-surface-container-lowest: #fffdf9;
+  --color-surface-container-low: #f6edff;
+  --color-surface-container: #efe2ff;
+  --color-surface-container-high: #e4ceff;
+  --color-surface-container-highest: #d5b4ff;
+  --color-surface-bright: #c699ff;
+  --color-surface-tint: #6d28d9;
 
-  --color-primary: #ffffff;
-  --color-primary-container: #f8fafc;
-  --color-primary-fixed: #ffffff;
-  --color-on-primary: #071126;
-  --color-on-primary-container: #071126;
+  --color-primary: #6d28d9;
+  --color-primary-container: #7c3aed;
+  --color-primary-fixed: #ede0ff;
+  --color-on-primary: #fffaf0;
+  --color-on-primary-container: #fffaf0;
 
-  --color-secondary: #ff2e93;
-  --color-secondary-container: #e61e7e;
-  --color-on-secondary: #ffffff;
+  --color-secondary: #c9184a;
+  --color-secondary-container: #a4133c;
+  --color-on-secondary: #fffaf0;
 
-  --color-tertiary: #ff70b8;
-  --color-tertiary-container: #d91b78;
-  --color-on-tertiary: #ffffff;
-  --color-on-tertiary-container: #ffffff;
+  --color-tertiary: #d90429;
+  --color-tertiary-container: #ffccd5;
+  --color-on-tertiary: #fffaf0;
+  --color-on-tertiary-container: #590d22;
 
-  --color-error: #ffb4ab;
-  --color-error-container: #93000a;
+  --color-error: #b91c1c;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #7f1d1d;
 
-  --color-on-surface: #ffffff;
-  --color-on-surface-variant: #cbd5e1;
-  --color-outline: #94a3b8;
-  --color-outline-variant: #2b4170;
+  --color-on-surface: #261142;
+  --color-on-surface-variant: #55387d;
+  --color-outline: #7e62a8;
+  --color-outline-variant: #d8c2f5;
 }
 
 @layer base {
   html,
   body {
-    background-color: #071126;
-    color: #ffffff;
+    background-color: #fdf7ef;
+    color: #261142;
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     overscroll-behavior: none;
   }
@@ -51,11 +52,11 @@
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgba(7, 17, 38, 0.8) !important;
-  color: #cbd5e1 !important;
+  background: rgba(253, 247, 239, 0.85) !important;
+  color: #55387d !important;
   font-size: 10px !important;
 }
 
 .maplibregl-ctrl-attrib a {
-  color: #ff2e93 !important;
+  color: #c9184a !important;
 }

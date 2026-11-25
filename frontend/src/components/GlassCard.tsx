@@ -32,7 +32,7 @@ export function GlassCard({
           : undefined
       }
       style={{ transformStyle: "preserve-3d" }}
-      className={`bg-surface-container/75 backdrop-blur-xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.42)] rounded-2xl ${className}`}
+      className={`bg-surface-container/80 backdrop-blur-xl border border-primary/15 shadow-[0_12px_32px_rgba(76,29,149,0.12)] rounded-2xl ${className}`}
     >
       {children}
     </motion.div>

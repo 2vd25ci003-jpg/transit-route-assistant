@@ -51,11 +51,11 @@ const HOURLY_PROFILE: Record<number, number> = {
 };
 
 const DISPATCH_COLORS: [number, number, number][] = [
-  [255, 255, 255],
-  [255, 46, 147],
-  [255, 112, 184],
-  [203, 213, 225],
-  [244, 114, 182],
+  [109, 40, 217],
+  [201, 24, 74],
+  [124, 58, 237],
+  [217, 4, 41],
+  [147, 51, 234],
 ];
 
 export function TransitMap({
@@ -167,7 +167,7 @@ export function TransitMap({
             type: "fill-extrusion",
             minzoom: 12,
             paint: {
-              "fill-extrusion-color": "#112144",
+              "fill-extrusion-color": "#e4ceff",
               "fill-extrusion-height": [
                 "coalesce",
                 ["get", "render_height"],
@@ -266,7 +266,7 @@ export function TransitMap({
           id: "route-glow",
           data: pathData,
           getPath: (d) => d.path,
-          getColor: [255, 46, 147, 115],
+          getColor: [124, 58, 237, 100],
           widthMinPixels: 11,
           capRounded: true,
           jointRounded: true,
@@ -275,7 +275,7 @@ export function TransitMap({
           id: "route-core",
           data: pathData,
           getPath: (d) => d.path,
-          getColor: [255, 255, 255, 245],
+          getColor: [201, 24, 74, 245],
           widthMinPixels: 4,
           capRounded: true,
           jointRounded: true,
@@ -324,10 +324,10 @@ export function TransitMap({
             getFillColor: (d) => {
               const val = d.avg_hourly_boardings * hourFactor;
               return val > 35
-                ? [255, 46, 147, 235]
+                ? [201, 24, 74, 235]
                 : val > 18
-                ? [255, 112, 184, 215]
-                : [255, 255, 255, 210];
+                ? [124, 58, 237, 220]
+                : [198, 153, 255, 210];
             },
             transitions: prefersReducedMotion ? undefined : { getElevation: 350 },
             onHover: (info) => {
@@ -359,7 +359,7 @@ export function TransitMap({
             getRadius: (d) => 90 + d.avg_hourly_boardings * hourFactor * 5,
             getFillColor: (d) => {
               const val = d.avg_hourly_boardings * hourFactor;
-              return val > 35 ? [255, 46, 147, 210] : [255, 255, 255, 190];
+              return val > 35 ? [201, 24, 74, 215] : [124, 58, 237, 195];
             },
             onHover: (info) => {
               if (info.object) {
@@ -396,9 +396,9 @@ export function TransitMap({
           getRadius: 110,
           getFillColor: (d) =>
             focusStop && focusStop.id === d.id
-              ? [255, 46, 147, 255]
-              : [7, 17, 38, 245],
-          getLineColor: [255, 255, 255, 255],
+              ? [201, 24, 74, 255]
+              : [253, 247, 239, 245],
+          getLineColor: [109, 40, 217, 255],
           onClick: (info) => {
             if (info.object && onSelectStop) onSelectStop(info.object);
           },
@@ -431,8 +431,8 @@ export function TransitMap({
           lineWidthMinPixels: 2,
           getPosition: (d) => [d.lng, d.lat],
           getRadius: 180,
-          getFillColor: [255, 46, 147, 245],
-          getLineColor: [255, 255, 255, 255],
+          getFillColor: [201, 24, 74, 245],
+          getLineColor: [253, 247, 239, 255],
           transitions: prefersReducedMotion ? undefined : { getPosition: 600 },
           onHover: (info) => {
             if (info.object) {

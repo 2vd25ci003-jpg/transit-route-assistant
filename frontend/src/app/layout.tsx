@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#071126",
+  themeColor: "#6d28d9",
   width: "device-width",
   initialScale: 1,
 };
@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <link
