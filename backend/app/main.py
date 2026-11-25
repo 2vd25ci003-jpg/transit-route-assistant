@@ -5,6 +5,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.database import Base, engine
@@ -24,6 +25,14 @@ app = FastAPI(
     title="Transit Route Assistant API",
     version="0.1.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -56,11 +65,14 @@ async def validation_exception_handler(
 
 # ---- Routers ------------------------------------------------------------
 
-from app.routers import routes, stops, vehicles  # noqa: E402
+from app.routers import admin, forecast, optimize, routes, stops, vehicles  # noqa: E402
 
 app.include_router(stops.router)
 app.include_router(routes.router)
 app.include_router(vehicles.router)
+app.include_router(forecast.router)
+app.include_router(optimize.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")

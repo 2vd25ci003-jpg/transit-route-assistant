@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ---------------------------------------------------------------------------
@@ -106,3 +106,112 @@ class VehicleOut(BaseModel):
     lat: float
     lng: float
     ts: datetime
+
+
+# ---------------------------------------------------------------------------
+# Forecast
+# ---------------------------------------------------------------------------
+
+
+class ForecastPoint(BaseModel):
+    """Single hourly boarding demand prediction."""
+
+    ts: datetime
+    predicted_count: float
+    baseline_count: float
+    actual_count: int | None = None
+
+
+class ForecastOut(BaseModel):
+    """Demand forecast response for a stop."""
+
+    stop_id: int
+    stop_name: str
+    horizon_hours: int
+    model_type: str
+    predictions: list[ForecastPoint]
+
+
+# ---------------------------------------------------------------------------
+# Optimizer
+# ---------------------------------------------------------------------------
+
+
+class OptimizeRequest(BaseModel):
+    """Request payload for fleet dispatch optimization."""
+
+    stop_ids: list[int] = Field(..., min_length=2)
+    fleet_size: int = Field(2, ge=1, le=20)
+    depot_stop_id: int | None = None
+
+
+class OptimizedRouteOut(BaseModel):
+    """Ordered stop sequence for one vehicle."""
+
+    vehicle_id: int
+    stop_ids: list[int]
+    stop_names: list[str]
+    distance_km: float
+
+
+class OptimizeOut(BaseModel):
+    """Fleet dispatch optimization result with baseline comparison."""
+
+    fleet_size: int
+    routes: list[OptimizedRouteOut]
+    total_distance_km: float
+    baseline_distance_km: float
+    savings_pct: float
+    solver: str
+
+
+# ---------------------------------------------------------------------------
+# Admin Analytics
+# ---------------------------------------------------------------------------
+
+
+class StopDemandOut(BaseModel):
+    """Aggregated demand stats for a stop (for heatmap)."""
+
+    stop_id: int
+    stop_name: str
+    lat: float
+    lng: float
+    avg_hourly_boardings: float
+    peak_hour: int
+    total_boardings: int
+
+
+class RouteHeadwayOut(BaseModel):
+    """Headway variance and bunching stats for a route."""
+
+    route_id: int
+    route_name: str
+    target_headway_min: float
+    avg_headway_min: float
+    headway_std_min: float
+    bunching_events: int
+    status: str
+
+
+class HourlyDemandPoint(BaseModel):
+    """Hourly actual vs forecast demand point."""
+
+    hour: int
+    label: str
+    actual_avg: float
+    forecast_avg: float
+
+
+class AdminAnalyticsOut(BaseModel):
+    """Operator dashboard summary metrics."""
+
+    active_vehicles: int
+    total_stops: int
+    total_routes: int
+    avg_headway_min: float
+    bunching_alerts: int
+    stop_demands: list[StopDemandOut]
+    route_headways: list[RouteHeadwayOut]
+    hourly_demand_series: list[HourlyDemandPoint]
+
